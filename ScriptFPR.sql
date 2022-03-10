@@ -285,3 +285,7 @@ ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Correo CHECK(Correo like '%[^@]@%[^.].[a-
 GO
 ALTER TABLE CLIENTE DROP CONSTRAINT IF EXISTS Chk_Telefono 
 ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Telefono CHECK(Contacto like '%[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]%')
+
+
+
+/*********************PRUEBA GITHUB*********************************************
