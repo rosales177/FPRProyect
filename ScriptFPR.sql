@@ -288,4 +288,4 @@ ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Telefono CHECK(Contacto like '%[0-9][0-9]
 
 
 
-/*********************PRUEBA GITHUB*********************************************
+/*********************PRUEBA GITHUB 2*********************************************
