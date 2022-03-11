@@ -171,11 +171,239 @@ CREATE TABLE IF NOT EXISTS HISTORIALCOMPRA
 ALTER TABLE CIUDAD ADD CONSTRAINT Uk_Nombre_Ciudad UNIQUE (Uk_Nombre);
 ALTER TABLE PAIS ADD CONSTRAINT Uk_Nombre_Pais UNIQUE (Uk_Pais);
 ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Correo CHECK(Correo like '%[^@]@%[^.].[a-z][a-z][a-z]');
-ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Telefono CHECK(Contacto like '%[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]%')
+ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Telefono CHECK(Contacto like '%[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]%');
 
+############################################### PROCEDIMIENTOS ALMACENADOS ##########################################################
 
+####################################  CATEGORIA ############################################
+DROP PROCEDURE IF EXISTS sp_InsertCategoria;
+DELIMITER $$
+CREATE PROCEDURE sp_InsertCategoria
+(IN nom_Category NVARCHAR(100))
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA CATEGORIA' as message;
+	END;
+	IF (LENGTH(nom_Category) = 0 or nom_Category = " ")
+    THEN
+		SELECT 'EL nombre de la categoria no puede ser nula o con valor en blanco.' as message;
+    END IF;
+	START TRANSACTION;
+		INSERT INTO CATEGORIA (`Nom_Category`) VALUES (nom_Category);
+    COMMIT; 
+    
+END;
 
+DROP PROCEDURE IF EXISTS sp_UpdateCategoria;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdateCategoria
+(
+IN id_Category int,
+IN nom_Category NVARCHAR(100)
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR UNA CATEGORIA' as message;
+	END;
+	IF (LENGTH(nom_Category) = 0 or nom_Category = " ")
+    THEN
+		SELECT 'EL nombre de la categoria no puede ser nula o con valor en blanco.' as message;
+    END IF;
+    IF (id_Category = 0 OR id_Category is null)
+    THEN
+		SELECT 'EL id de la categoria no puede ser nula o igual a cero.' as message;
+    END IF;
+	START TRANSACTION;
+		UPDATE CATEGORIA SET `Nom_Category`= nom_Category WHERE `id_Categoria` = id_Category;
+    COMMIT; 
+    
+END;
 
+DROP PROCEDURE IF EXISTS sp_DeleteCategoria;
+DELIMITER $$
+CREATE PROCEDURE sp_DeleteCategoria
+(
+IN id_Category int
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR UNA CATEGORIA' as message;
+	END;
+    IF (id_Category = 0 OR id_Category is null)
+    THEN
+		SELECT 'EL id de la categoria no puede ser nula o igual a cero.' as message;
+    END IF;
+	START TRANSACTION;
+		DELETE FROM CATEGORIA WHERE `id_Categoria` = id_Category;
+    COMMIT; 
+    
+END;
+
+DROP PROCEDURE IF EXISTS sp_SelectWhereCategoria;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectWhereCategoria
+(
+IN id_Category int,
+IN nom_Category nvarchar(100)
+)
+BEGIN
+	DECLARE _consultalike NVARCHAR(100) ;
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR UNA CATEGORIA' as message;
+	END;
+    IF (LENGTH(nom_Category) = 0 or nom_Category = " ")
+    THEN
+		SELECT 'EL nombre de la categoria no puede ser nula o con valor en blanco.' as message;
+    END IF;
+    IF (id_Category = 0 OR id_Category is null)
+    THEN
+		SELECT 'EL id de la categoria no puede ser nula o igual a cero.' as message;
+    END IF;
+	START TRANSACTION;
+		SET _consultalike = CONCAT('%',nom_Category,'%');
+		SELECT `Nom_Category` as Categoria FROM CATEGORIA WHERE `id_Categoria` = id_Category AND `Nom_Category` like _consultalike;
+    COMMIT; 
+END;
+
+DROP VIEW IF EXISTS v_SelectCategoria;
+DELIMITER $$
+CREATE VIEW v_SelectCategoria
+AS
+	SELECT `Nom_Category` as Categoria FROM CATEGORIA
+END;
+
+####################################  CATEGORIA ############################################
+
+DROP PROCEDURE IF EXISTS sp_InsertSubCategoria;
+DELIMITER $$
+CREATE PROCEDURE sp_InsertSubCategoria
+(
+IN id_Category int,
+IN nom_SubCategory nvarchar(100)
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA SUBCATEGORIA' as message;
+	END;
+	IF (id_Category = 0 or id_Category is null)
+    THEN
+		SELECT 'EL id de la Subcategoria no puede ser nula o cero.' as message;
+    END IF;
+    IF (LENGTH(nom_SubCategory) = 0 or nom_SubCategory = " ")
+    THEN
+		SELECT 'EL nombre de la Subcategoria no puede ser nula o con valor en blanco.' as message;
+    END IF;
+ 	START TRANSACTION;
+		INSERT INTO SUBCATEGORIAS (`id_Category`,`Nom_SubCategory`) VALUES (id_Category,nom_SubCategory);
+    COMMIT; 
+    
+END;
+
+DROP PROCEDURE IF EXISTS sp_UpdateSubCategoria;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdateSubCategoria
+(
+IN id_SubCategory int,
+IN id_Category int,
+IN nom_SubCategory nvarchar(100)
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA SUBCATEGORIA' as message;
+	END;
+    IF (id_SubCategory = 0 or id_SubCategory is null)
+    THEN
+		SELECT 'EL id de la Subcategoria no puede ser nula o cero.' as message;
+    END IF;
+	IF (id_Category = 0 or id_Category is null)
+    THEN
+		SELECT 'EL id de la Categoria no puede ser nula o cero.' as message;
+    END IF;
+    IF (LENGTH(nom_SubCategory) = 0 or nom_SubCategory = " ")
+    THEN
+		SELECT 'EL nombre de la Subcategoria no puede ser nula o con valor en blanco.' as message;
+    END IF;
+ 	START TRANSACTION;
+		UPDATE SUBCATEGORIAS SET `id_Category` = id_Category ,  `Nom_SubCategory` = nom_SubCategory WHERE `id_SubCategory` = id_SubCategory ;
+    COMMIT; 
+    
+END;
+
+DROP PROCEDURE IF EXISTS sp_DeleteSubCategoria;
+DELIMITER $$
+CREATE PROCEDURE sp_DeleteSubCategoria
+(
+IN id_SubCategory int
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA SUBCATEGORIA' as message;
+	END;
+    IF (id_SubCategory = 0 or id_SubCategory is null)
+    THEN
+		SELECT 'EL id de la Subcategoria no puede ser nula o cero.' as message;
+    END IF;
+ 	START TRANSACTION;
+		DELETE FROM SUBCATEGORIAS WHERE `id_SubCategory` = id_SubCategory ;
+    COMMIT; 
+    
+END;
+
+DROP PROCEDURE IF EXISTS sp_SelectWhereSubCategoria;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectWhereSubCategoria
+(
+IN id_SubCategory int,
+IN consulta nvarchar(50)
+)
+BEGIN
+
+	DECLARE _consultalike NVARCHAR(100) ;
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA SUBCATEGORIA' as message;
+	END;
+    IF (id_SubCategory = 0 or id_SubCategory is null)
+    THEN
+		SELECT 'EL id de la Subcategoria no puede ser nula o cero.' as message;
+    END IF;
+    IF (LENGTH(consulta) = 0 or consulta = " ")
+    THEN
+		SELECT 'La consulta de la Subcategoria no puede ser nula o con valor en blanco.' as message;
+    END IF;
+ 	START TRANSACTION;
+		SET _consultalike = CONCAT('%',consulta,'%');
+        
+        SELECT SUB.`id_SubCategory` as ID ,CAT.`Nom_Category`,SUB.`Nom_SubCategory` AS SubCategoria FROM SUBCATEGORIAS AS SUB
+        JOIN CATEGORIA AS CAT
+        ON(SUB.`id_Category` = CAT.`id_Categoria`)
+        WHERE `id_SubCategory` = id_SubCategory AND CAT.`Nom_Category` like _consultalike OR `id_SubCategory` = id_SubCategory AND   `Nom_SubCategory` like _consultalike;
+    COMMIT; 
+    
+END;
+
+DROP VIEW IF EXISTS v_SelectSubCategoria;
+CREATE VIEW v_SelectSubCategoria
+AS
+	SELECT SUB.`id_SubCategory` as ID ,CAT.`Nom_Category`,SUB.`Nom_SubCategory` AS SubCategoria FROM SUBCATEGORIAS AS SUB JOIN CATEGORIA AS CAT ON(SUB.`id_Category` = CAT.`id_Categoria`) LIMIT 30
+END;
+#VERIFICAR EL VIEW v_SelectSubCategoria, error en END; no encuentro el error;
+############################################################################################################################################
 
 
 
