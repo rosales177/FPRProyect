@@ -132,6 +132,7 @@ CREATE TABLE IF NOT EXISTS PEDIDO
 	Total smallint not null,
 	TotalPagar smallint not null,
 	_Status bit,
+    primary key (N_Pedido),
 	CONSTRAINT Fk_Pedido_Cliente 
     FOREIGN KEY (id_Cliente)
     REFERENCES CLIENTE(id_Cliente)
@@ -152,8 +153,7 @@ CREATE TABLE IF NOT EXISTS CARRITOCOMPRA
     CONSTRAINT Fk_CarritoCompra_Pedido
     FOREIGN KEY (N_Pedido)
     REFERENCES  PEDIDO(N_Pedido)
-    ### PROLEMA EN LA TABLA CARRITOCOMPRA EN LA COLUMNA N_Pedido no me permite asociar con la
-    ### tabla PEDIDO con la columna N_Pedidos, me sale una advertencia ,chequea abajo lo que dice
+##SE RESOLVIO EL PROBLEMA -NO SE CREO EL PRIMARY KEY
     
 );
 DROP TABLE IF EXISTS HISTORIALCOMPRA;
