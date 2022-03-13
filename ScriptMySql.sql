@@ -1,7 +1,6 @@
 DROP DATABASE IF EXISTS DB_OLX;
 CREATE DATABASE DB_OLX;
 USE DB_OLX;
-
 DROP TABLE IF EXISTS CLIENTE;  
  CREATE TABLE IF NOT EXISTS CLIENTE (
 	id_Cliente int not null auto_increment ,
@@ -174,7 +173,6 @@ ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Correo CHECK(Correo like '%[^@]@%[^.].[a-
 ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Telefono CHECK(Contacto like '%[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]%');
 
 ############################################### PROCEDIMIENTOS ALMACENADOS ##########################################################
-
 ####################################  CATEGORIA ############################################
 DROP PROCEDURE IF EXISTS sp_InsertCategoria;
 DELIMITER $$
@@ -273,15 +271,7 @@ BEGIN
     COMMIT; 
 END;
 
-DROP VIEW IF EXISTS v_SelectCategoria;
-DELIMITER $$
-CREATE VIEW v_SelectCategoria
-AS
-	SELECT `Nom_Category` as Categoria FROM CATEGORIA
-END;
-
-####################################  CATEGORIA ############################################
-
+####################################  SUBCATEGORIA ############################################
 DROP PROCEDURE IF EXISTS sp_InsertSubCategoria;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertSubCategoria
@@ -397,14 +387,244 @@ BEGIN
     
 END;
 
-DROP VIEW IF EXISTS v_SelectSubCategoria;
-CREATE VIEW v_SelectSubCategoria
+DROP VIEW IF EXISTS v_sSelectSubCategoria;
+CREATE VIEW v_sSelectSubCategorIA
 AS
 	SELECT SUB.`id_SubCategory` as ID ,CAT.`Nom_Category`,SUB.`Nom_SubCategory` AS SubCategoria FROM SUBCATEGORIAS AS SUB JOIN CATEGORIA AS CAT ON(SUB.`id_Category` = CAT.`id_Categoria`) LIMIT 30
-END;
-#VERIFICAR EL VIEW v_SelectSubCategoria, error en END; no encuentro el error;
+#VERIFIQUE VIDE DE YOUTU INDICA QUE CUANDO HACES CONEXIONES DE TABLA NO PUEDE PONER EL END PÓRQUE ESO AFECTA EL CONTENIDO. (SIN END)
 ############################################################################################################################################
 
+###################################### PAIS #######################################################
+DROP PROCEDURE IF EXISTS sp_InsertPais;
+DELIMITER $$
+CREATE PROCEDURE sp_InsertPais
+(IN nom_Pais NVARCHAR(100))
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UN NUEVO PAIS' as message;
+	END;
+    IF (LENGTH(nom_Pais) = 0 or nom_Pais = " ")
+     THEN 
+     	SELECT 'EL nombre del pais no puede ser nula o con valor en blanco.' as message;
+	ELSEIF((EXISTS(SELECT `Uk_Pais` FROM PAIS WHERE  `Uk_Pais`= nom_Pais )))
+    THEN
+		SELECT 'El nombre del pais ya existente.' as message;
+	ELSE
+		START TRANSACTION;
+			INSERT INTO PAIS (`Uk_Pais`) VALUES (nom_Pais);
+		COMMIT; 
+     END IF;     	
+END;
+
+DROP PROCEDURE IF EXISTS sp_UpdatePais;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdatePais
+(
+IN id_Country int,
+IN nom_Pais NVARCHAR(100)
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE UPDATE UN PAIS' as message;
+	END;
+	IF (LENGTH(nom_Pais) = 0 or nom_Pais = " ")
+    THEN
+		SELECT 'EL nombre del pais no puede ser nula o con valor en blanco.' as message;
+    ELSEIF (id_Pai = 0 OR id_Pai is null)
+    THEN
+		SELECT 'EL id del pais no puede ser nula o igual a cero.' as message;
+	ELSE
+	START TRANSACTION;
+		UPDATE pais SET Uk_Pais = nom_Pais WHERE id_Pais = id_Country;
+    COMMIT; 
+    END IF;
+    
+END;
+
+DROP PROCEDURE IF EXISTS sp_DeletePais;
+DELIMITER $$
+CREATE PROCEDURE sp_DeletePais
+(
+IN id_Country int
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE DELETE UN PAIS' as message;
+	END;
+    IF (id_Country = 0 OR id_Country is null)
+    THEN
+		SELECT 'EL id del pais no puede ser nula o igual a cero.' as message;
+	ELSEIF(NOT EXISTS(SELECT id_Pais FROM Pais WHERE id_Pais = id_Country))
+    THEN
+		SELECT "El id del pais no existente." as message;
+	ELSE
+		START TRANSACTION;
+			DELETE FROM Pais WHERE id_Pais = id_Country;
+		COMMIT;
+    END IF;
+END;
+
+DROP PROCEDURE IF EXISTS sp_SelectWherePais;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectWherePais
+(
+IN nom_Pais nvarchar(100)
+)
+BEGIN
+	DECLARE _consultalike NVARCHAR(100) ;
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE LISTAR PAIS' as message;
+	END;
+    IF (LENGTH(nom_Pais) = 0 or nom_Pais = " ")
+    THEN
+		SELECT 'EL nombre del pais no puede ser nula o con valor en blanco.' as message;
+    ELSE
+		START TRANSACTION;
+		SET _consultalike = CONCAT('%',nom_Pais,'%');
+		SELECT `Uk_Pais` as Pais FROM Pais WHERE  `Uk_Pais` like _consultalike;
+    COMMIT;
+    END IF;
+END;
+
+DROP VIEW IF EXISTS v_SelectPais;
+DELIMITER $$
+CREATE VIEW v_SelectPais
+AS
+	SELECT `Uk_Pais` as Pais FROM Pais
+END;
+####################################CIUDAD###################################################
+DROP PROCEDURE IF EXISTS sp_InsertCiudad;
+DELIMITER $$
+CREATE PROCEDURE sp_InsertCiudad
+(IN id_Pais int,
+IN nom_Ciudad NVARCHAR(100)
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UN NUEVO CIUDAD' as message;
+	END;
+    IF ((id_Pais = 0 or id_Pais is null))
+     THEN 
+     	SELECT 'EL id de la ciudad no puede ser nula o igual a cero.' as message;
+	ELSEIF
+    THEN(LENGTH(nom_Ciudad) = 0 or nom_Ciudad = " ")
+		 SELECT 'EL nombre de la ciudad no puede ser nula o con valor en blanco.' as message;
+	ELSEIF(( NOT EXISTS(SELECT `id_Pais` FROM pais WHERE  `id_Pais`= id_Pais )))
+    THEN
+		SELECT 'El nombre del pais no existente para el registro.' as message;
+	ELSE
+		START TRANSACTION;
+			INSERT INTO CIUDAD (`id_Pais`,`Uk_Nombre`) VALUES (id_Pais,Uk_Nombre);
+		COMMIT; 
+     END IF;     	
+END;
+
+DROP PROCEDURE IF EXISTS sp_UpdateCiudad;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdateCiudad
+(
+IN id_Ciudad int,
+IN id_Pais int,
+IN nom_Ciudad NVARCHAR(100)
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE UPDATE UNA CIUDAD' as message;
+	END;
+	IF (LENGTH(id_Ciudad) = 0 or id_Ciudad = " ")
+    THEN
+		SELECT 'EL id de la Ciudad no puede ser nula o cero.' as message;
+	ELSEIF (LENGTH(id_Pais) = 0 or id_Pais = " ")
+    THEN
+		SELECT 'EL id del Pais no puede ser nula o cero..' as message;
+    ELSEIF (LENGTH(nom_Ciudad) = 0 or nom_Ciudad = " ")
+    THEN
+		SELECT 'EL nombre de la ciudad no puede ser nula o con valor en blanco.'  as message;
+	ELSE
+	START TRANSACTION;
+		UPDATE CIUDAD SET id_Pais = id_Pais , Uk_Nombre = nom_Ciudad  WHERE id_Ciudad= id_Ciudad;
+    COMMIT; 
+    END IF;
+END;
+
+DROP PROCEDURE IF EXISTS sp_DeleteCiudad;
+DELIMITER $$
+CREATE PROCEDURE sp_DeleteCiudad
+(
+IN id_Ciudad int
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE DELETE UNA CIUDAD' as message;
+	END;
+    IF (id_Ciudad = 0 OR id_Ciudad is null)
+    THEN
+		SELECT 'EL id de la ciudad no puede ser nula o igual a cero.' as message;
+	ELSEIF(NOT EXISTS(SELECT `id_Ciudad` FROM CIUDAD WHERE `id_Ciudad` = id_Ciudad))
+    THEN
+		SELECT "El id de la ciudad no existente." as message;
+	ELSE
+		START TRANSACTION;
+			DELETE FROM CIUDAD WHERE `id_Ciudad` = id_Ciudad;
+		COMMIT;
+    END IF;
+END;
+
+DROP PROCEDURE IF EXISTS sp_SelectWhereCiud;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectWhereCiud
+(
+IN id_Ciudad int,
+IN consulta nvarchar(50)
+)
+BEGIN
+
+	DECLARE _consultalike NVARCHAR(100) ;
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA SUBCATEGORIA' as message;
+	END;
+    IF (id_Ciudad  = 0 or id_Ciudad is null)
+    THEN
+		SELECT 'EL id de la Subcategoria no puede ser nula o cero.' as message;
+    
+    ELSEIF (LENGTH(consulta) = 0 or consulta = " ")
+    THEN
+		SELECT 'La consulta de la Subcategoria no puede ser nula o con valor en blanco.' as message;
+    ELSE
+ 	START TRANSACTION;
+		SET _consultalike = CONCAT('%',consulta,'%');
+        
+        SELECT CIU.id_Ciudad as ID ,PS.Uk_Pais AS PAIS,CIU.Uk_Nombre AS CIUDAD FROM Pais AS CIU
+        JOIN Pais AS PS
+        ON(CIU.id_Pais = PS.id_Pais)
+        WHERE CIU.id_Ciudad = id_Ciudad AND PS.Uk_Pais like _consultalike OR CIU.id_Ciudad = id_Ciudad AND  CIU.Uk_Nombre  like _consultalike;
+    COMMIT;
+    END IF;
+    
+END;
+
+DROP VIEW IF EXISTS v_sSelectCiudad;
+CREATE VIEW v_sSelectCiudad
+AS
+	SELECT CIU.`id_Ciudad` as ID ,PS.`Uk_Pais` AS PAIS,CIU.`Uk_Nombre` AS CIUDAD FROM CIUDAD AS CIU JOIN PAIS AS PS ON(CIU.`id_Pais` = PS.`id_Pais`) LIMIT 30
+
+##########################
 
 
 
