@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS PRODUCTOS
 	Descript_Product nvarchar(500) not null,
 	Precio smallint not null,
 	Stock smallint not null,
-	Img nvarchar(100) not null,
+	Img nvarchar(100) null, ##La imagen no es dispensable para agregar el producto
 	_Status bit,
     PRIMARY KEY(id_Product),
     CONSTRAINT  Fk_Productos_SubCategoria
@@ -624,7 +624,174 @@ CREATE VIEW v_sSelectCiudad
 AS
 	SELECT CIU.`id_Ciudad` as ID ,PS.`Uk_Pais` AS PAIS,CIU.`Uk_Nombre` AS CIUDAD FROM CIUDAD AS CIU JOIN PAIS AS PS ON(CIU.`id_Pais` = PS.`id_Pais`) LIMIT 30
 
-##########################
+####################################  PRODUCTOS ############################################
+DROP PROCEDURE IF EXISTS sp_InsertProductos;
+DELIMITER $$
+CREATE PROCEDURE sp_sp_InsertProductos
+(
+IN id_SubCategory int,
+IN descripcion nvarchar(250),
+IN precio numeric(15,4),
+IN stock int,
+IN image blob, 
+IN _Status bit
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UN NUEVO PRODUCTO' as message;
+	END;
+	IF (id_SubCategory = 0 or id_SubCategory is null)
+    THEN
+		SELECT 'El id de la subcategoria no puede ser nula o cero.' as message;
+    END IF;
+    IF (LENGTH(descripcion) = 0 or descripcion= " ")
+    THEN
+		SELECT 'La descripción del producto no puede ser nula o con valor en blanco.' as message;
+    END IF;
+    IF (precio < 0 or precio is null)
+    THEN
+		SELECT 'El precio del producto no puede ser nula o menor a cero.' as message;
+    END IF;
+    IF (stock < 0 or stock is null)
+    THEN
+		SELECT 'El stock del producto no puede ser nula o menor a cero.' as message;
+    END IF;
+    IF (_Status < 0 or _Status is null)
+    THEN
+		SET _Status = 0;
+    END IF;
+ 	START TRANSACTION;
+		INSERT INTO PRODUCTOS (`id_SubCategory`,`Descript_Product`,`Precio`,`Stock`,`Img`,`_Status`) VALUES (id_SubCategory,descripcion,precio,stock,image,_Status);
+    COMMIT; 
+END;
+
+DROP PROCEDURE IF EXISTS sp_UpdateProducto;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdateProducto
+(
+IN id_product int,
+IN id_SubCategory int,
+IN descripcion nvarchar(250),
+IN precio numeric(15,4),
+IN stock int,
+IN image blob, 
+IN _Status bit
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR EL PRODUCTO' as message;
+	END;
+    
+    IF (id_product = 0 or id_product is null)
+    THEN
+		SELECT 'El id del producto no puede ser nula o cero.' as message;
+    END IF;
+	IF (id_SubCategory = 0 or id_SubCategory is null)
+    THEN
+		SELECT 'El id de la subcategoria no puede ser nula o cero.' as message;
+    END IF;
+    IF (LENGTH(descripcion) = 0 or descripcion= " ")
+    THEN
+		SELECT 'La descripción del producto no puede ser nula o con valor en blanco.' as message;
+    END IF;
+    IF (precio < 0 or precio is null)
+    THEN
+		SELECT 'El precio del producto no puede ser nula o menor a cero.' as message;
+    END IF;
+    IF (stock < 0 or stock is null)
+    THEN
+		SELECT 'El stock del producto no puede ser nula o menor a cero.' as message;
+    END IF;
+    IF (_Status < 0 or _Status is null)
+    THEN
+		SET _Status = 0;
+    END IF;
+ 	START TRANSACTION;
+		UPDATE PRODUCTOS SET `id_SubCategory` = id_SubCategory ,`Descript_Product` = descripcion ,`Precio` = precio ,`Stock` = stock,`Img` = image,`_Status` = _Status WHERE `id_Product` = id_product; 
+    COMMIT; 
+    
+END;
+
+DROP PROCEDURE IF EXISTS sp_DeleteSubCategoria;
+DELIMITER $$
+CREATE PROCEDURE sp_DeleteSubCategoria
+(
+IN id_product int
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR EL PRODUCTO' as message;
+	END;
+    IF (id_product = 0 or id_product is null)
+    THEN
+		SELECT 'EL id del producto no puede ser nula o cero.' as message;
+    END IF;
+ 	START TRANSACTION;
+		DELETE FROM PRODUCTOS WHERE `id_Product` = id_product ;
+    COMMIT; 
+    
+END;
+
+DROP PROCEDURE IF EXISTS sp_SelectWhereProducto;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectWhereProducto
+(
+IN id_product int,
+IN consulta nvarchar(50)
+)
+BEGIN
+
+	DECLARE _consultalike NVARCHAR(100) ;
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA' as message;
+	END;
+    IF (id_product = 0 or id_product  is null)
+    THEN
+		SELECT 'EL id del producto no puede ser nula o cero.' as message;
+    END IF;
+    IF (LENGTH(consulta) = 0 or consulta = " ")
+    THEN
+		SELECT 'La consulta del producto no puede ser nula o con valor en blanco.' as message;
+    END IF;
+ 	START TRANSACTION;
+		SET _consultalike = CONCAT('%',consulta,'%');
+        
+        SELECT PD.`id_Product`, SUB.`Nom_SubCategory`,CAT.`Nom_Category`,PD.`Descript_Product`,PD.`Precio`,PD.`Stock`,PD.`Img`,PD.`_Status` 
+        FROM PRODUCTOS as PD
+        JOIN SUBCATEGORIAS as SUB
+        ON (PD.`id_SubCategory` = SUB.`id_SubCategory`)
+        JOIN CATEGORIA AS CAT
+        ON(SUB.`id_Category` = CAT.`id_Categoria`)
+        WHERE PD.`id_Product` = id_product AND CAT.`Nom_Category` like _consultalike OR
+        PD.`id_Product` = id_product AND SUB.`Nom_SubCategory` like _consultalike OR
+        PD.`id_Product` = id_product AND CAT.`Nom_Category` like _consultalike OR
+        PD.`id_Product` = id_product AND PD.`Descript_Product` like _consultalike OR
+        PD.`id_Product` = id_product AND PD.`Status` like _consultalike
+        LIMIT 30;
+        
+    COMMIT; 
+    
+END;
+
+DROP VIEW IF EXISTS v_sSelectProducto;
+CREATE VIEW v_sSelectProducto
+AS
+	SELECT PD.`id_Product`, SUB.`Nom_SubCategory` AS SubCategoria ,CAT.`Nom_Category` AS Categoria ,PD.`Descript_Product` AS Descripcion ,PD.`Precio`,PD.`Stock`,PD.`Img`,PD.`_Status` as Estado 
+	FROM PRODUCTOS as PD
+	JOIN SUBCATEGORIAS as SUB
+	ON (PD.`id_SubCategory` = SUB.`id_SubCategory`)
+	JOIN CATEGORIA AS CAT
+	ON(SUB.`id_Category` = CAT.`id_Categoria`)
+    LIMIT 30;
+############################################################################################################################################
 
 
 
