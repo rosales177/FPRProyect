@@ -485,12 +485,12 @@ BEGIN
 		COMMIT;
     END IF;
 END;
-
 DROP PROCEDURE IF EXISTS sp_SelectWherePais;
 DELIMITER $$
 CREATE PROCEDURE sp_SelectWherePais
 (
-IN nom_Pais nvarchar(100)
+IN id_Pais int,
+IN consulta nvarchar(100)
 )
 BEGIN
 	DECLARE _consultalike NVARCHAR(100) ;
@@ -499,13 +499,16 @@ BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE LISTAR PAIS' as message;
 	END;
-    IF (LENGTH(nom_Pais) = 0 or nom_Pais = " ")
+    IF (id_Pais = 0 or id_Pais  is null)
+    THEN
+		SELECT 'EL id del pais no puede ser nula o cero.' as message;
+	ELSEIF (LENGTH(consulta) = 0 or consulta = " " )
     THEN
 		SELECT 'EL nombre del pais no puede ser nula o con valor en blanco.' as message;
     ELSE
 		START TRANSACTION;
-		SET _consultalike = CONCAT('%',nom_Pais,'%');
-		SELECT `Uk_Pais` as Pais FROM Pais WHERE  `Uk_Pais` like _consultalike;
+		SET _consultalike = CONCAT('%',consulta,'%');
+		SELECT `Uk_Pais` as PAIS FROM PAIS WHERE `id_Pais`=id_Pais AND`Uk_Pais` like _consultalike;
     COMMIT;
     END IF;
 END;
@@ -514,7 +517,7 @@ DROP VIEW IF EXISTS v_SelectPais;
 DELIMITER $$
 CREATE VIEW v_SelectPais
 AS
-	SELECT `Uk_Pais` as Pais FROM Pais
+	SELECT `Uk_Pais` as PAIS FROM PAIS
 END;
 
 ####################################CIUDAD###################################################
@@ -760,7 +763,7 @@ BEGIN
     END IF;
     IF (LENGTH(consulta) = 0 or consulta = " ")
     THEN
-		SELECT 'La consulta del producto no puede ser nula o con valor en blanco.' as message;
+		SELECT 'La consulta de la direccion no puede ser nula o con valor en blanco.' as message;
     END IF;
  	START TRANSACTION;
 		SET _consultalike = CONCAT('%',consulta,'%');
@@ -794,6 +797,118 @@ AS
 	JOIN PAIS AS PS
 	ON(CIU.id_Pais  = PS.`id_Pais`)
     LIMIT 30;
+#################################### ROL ##################################################
+
+DROP PROCEDURE IF EXISTS sp_InsertRoll;
+DELIMITER $$
+CREATE PROCEDURE sp_InsertRoll
+(
+IN Descript_Roll nvarchar(50)
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UN NUEVO ROL' as message;
+	END;
+    IF (LENGTH(Descript_Roll) = 0 or Descript_Roll= " ")
+    THEN
+		SELECT 'La descripcion no puede ser nula o con valor en blanco.' as message;
+    END IF;
+    IF((EXISTS(SELECT `Descript_Roll` FROM  ROLL WHERE  `Descript_Roll` = Descript_Roll)))
+    THEN
+		SELECT 'La descripcion ya existente para el registro.' as message;
+    END IF;
+ 	START TRANSACTION;
+		INSERT INTO ROLL (`Descript_Roll`) VALUES (Descript_Roll);
+    COMMIT; 
+END;
+
+DROP PROCEDURE IF EXISTS sp_UpdateRoll;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdateRoll
+(
+IN id_Roll int,
+IN Descript_Roll nvarchar(50)
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE UPDATE EL ROLL' as message;
+	END;
+    IF (id_Roll = 0 or id_Roll is null)
+    THEN
+		SELECT 'El id del rol no puede ser nula o cero.' as message;
+    END IF;
+    IF (LENGTH(Descript_Roll) = 0 or Descript_Roll=" ")
+    THEN
+		SELECT 'La descripcion no puede ser nula o con valor en blanco.' as message;
+    END IF;
+ 	START TRANSACTION;
+		UPDATE ROLL SET `Descript_Roll` = Descript_Roll  WHERE `id_Roll` = id_Roll; 
+    COMMIT; 
+END;
+
+DROP PROCEDURE IF EXISTS sp_DeleteRoll;
+DELIMITER $$
+CREATE PROCEDURE sp_DeleteRoll
+(
+IN id_Roll int
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR UN ROL' as message;
+	END;
+    IF (id_Roll = 0 or id_Roll is null)
+    THEN
+		SELECT 'EL id del rol no puede ser nula o cero.' as message;
+    END IF;
+ 	START TRANSACTION;
+		DELETE FROM ROLL WHERE `id_Roll` = id_Roll ;
+    COMMIT; 
+END;
+
+DROP PROCEDURE IF EXISTS sp_SelectWhereRoll;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectWhereRoll
+(
+IN id_Roll int,
+IN consulta nvarchar(50)
+)
+BEGIN
+
+	DECLARE _consultalike NVARCHAR(100) ;
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA' as message;
+	END;
+    IF (id_Roll = 0 or id_Roll is null)
+    THEN
+		SELECT 'EL id del roll no puede ser nula o cero.' as message;
+    END IF;
+    IF (LENGTH(consulta) = 0 or consulta = " ")
+    THEN
+		SELECT 'La consulta deL roll no puede ser nula o con valor en blanco.' as message;
+    END IF;
+ 	START TRANSACTION;
+		SET _consultalike = CONCAT('%',consulta,'%');
+        
+        SELECT RL.id_Roll,RL.Descript_Roll
+        FROM ROLL as RL
+        WHERE RL.`id_Roll` = id_Roll AND RL.`Descript_Roll` like _consultalike 
+        LIMIT 30;
+        
+    COMMIT;     
+END;
+
+DROP VIEW IF EXISTS v_sSelectRoll;
+CREATE VIEW v_sSelectRoll
+AS
+	 SELECT RL.id_Roll,RL.Descript_Roll FROM ROLL as RL LIMIT 30;
 
 ####################################  PRODUCTOS ############################################
 DROP PROCEDURE IF EXISTS sp_InsertProductos;
@@ -950,7 +1065,6 @@ BEGIN
     COMMIT; 
     
 END;
-
 
 DROP VIEW IF EXISTS v_sSelectProducto;
 CREATE VIEW v_sSelectProducto
