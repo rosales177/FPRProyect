@@ -169,8 +169,18 @@ CREATE TABLE IF NOT EXISTS HISTORIALCOMPRA
 ##########################################################
 ALTER TABLE CIUDAD ADD CONSTRAINT Uk_Nombre_Ciudad UNIQUE (Uk_Nombre);
 ALTER TABLE PAIS ADD CONSTRAINT Uk_Nombre_Pais UNIQUE (Uk_Pais);
-ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Correo CHECK(Correo like '%[^@]@%[^.].[a-z][a-z][a-z]');
-ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Telefono CHECK(Contacto like '%[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]%');
+
+/*ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Correo CHECK(Correo like '%[^@]@%[^.].[a-z][a-z][a-z]');*/
+/*ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Telefono CHECK(Contacto like '%[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]%');*/
+
+
+
+### VERIFICAR LOS CHECK DE CORREO Y TELEFONO ,REALIZE PRUEBA CON ESTE INSERT CON LOS CHECK ACTIVADO Y NO INSERTA :
+INSERT INTO CLIENTE(Nombre_Cliente,Apellido_Cliente,Edad_Cliente,Correo,Contacto)VALUES('Maria','Mallqui Torres',15,'miguel123@gmail.com,',974557891);
+### EN LOS PROCEDIMIENTOS CON LAS CONDICION IF DE CADA MENSAJE DE ERROR ,OCURRE QUE EL IF SE EJECUTA CON EL MENSAJE DEL ERROR Y DE AHI TAMBIEN SE EJECUTA EL CRUD(INSERTA,ELIMNIAR,UPDATE)
+#EJEMPLO CON EL INSERT(QUE INSERTA BLANCO), 
+### DALE UNA CHEQUEADA PARA CAMBIARLO A IF Y ELSEIF Y ELSE O ASI ESTA BIEN? ME CONFIRMAS 
+
 
 ############################################### PROCEDIMIENTOS ALMACENADOS ##########################################################
 ####################################  CATEGORIA ############################################
@@ -270,6 +280,12 @@ BEGIN
 		SELECT `Nom_Category` as Categoria FROM CATEGORIA WHERE `id_Categoria` = id_Category AND `Nom_Category` like _consultalike;
     COMMIT; 
 END;
+
+
+DROP VIEW IF EXISTS v_sSelectCategoria;
+CREATE VIEW v_sSelectCategorIA
+AS
+	SELECT `Nom_Category` as Categoria FROM CATEGORIA  LIMIT 30
 
 ####################################  SUBCATEGORIA ############################################
 DROP PROCEDURE IF EXISTS sp_InsertSubCategoria;
@@ -500,6 +516,7 @@ CREATE VIEW v_SelectPais
 AS
 	SELECT `Uk_Pais` as Pais FROM Pais
 END;
+
 ####################################CIUDAD###################################################
 DROP PROCEDURE IF EXISTS sp_InsertCiudad;
 DELIMITER $$
@@ -623,6 +640,160 @@ DROP VIEW IF EXISTS v_sSelectCiudad;
 CREATE VIEW v_sSelectCiudad
 AS
 	SELECT CIU.`id_Ciudad` as ID ,PS.`Uk_Pais` AS PAIS,CIU.`Uk_Nombre` AS CIUDAD FROM CIUDAD AS CIU JOIN PAIS AS PS ON(CIU.`id_Pais` = PS.`id_Pais`) LIMIT 30
+##################################### DIRECCIONES ########################################
+DROP PROCEDURE IF EXISTS sp_InsertDireccion;
+DELIMITER $$
+CREATE PROCEDURE sp_InsertDireccion
+(
+IN id_Cliente int,
+IN Direccion nvarchar(50),
+IN id_Ciudad int
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA DIRECCIÓN' as message;
+	END;
+	IF (id_Cliente = 0 or id_Cliente is null)
+    THEN
+		SELECT 'El id del cliente no puede ser nula o cero.' as message;
+    END IF;
+    IF (LENGTH(Direccion) = 0 or Direccion= " ")
+    THEN
+		SELECT 'La direccion no puede ser nula o con valor en blanco.' as message;
+    END IF;
+    IF (id_Ciudad = 0 or id_Ciudad is null)
+    THEN
+		SELECT 'El id de la ciudad no puede ser nula o cero.' as message;
+    END IF;
+    IF ((NOT EXISTS(SELECT `id_Cliente` FROM CLIENTE WHERE  `id_Cliente` = id_Cliente )))
+    THEN
+		SELECT 'El cliente no existente para el registro.' as message;
+    END IF;
+    IF((NOT EXISTS(SELECT `id_Ciudad` FROM  CIUDAD WHERE  `id_Ciudad` = id_Ciudad )))
+    THEN
+		SELECT 'La ciudad no existente para el registro.' as message;
+    END IF;
+ 	START TRANSACTION;
+		INSERT INTO DIRECCIONES (`id_Cliente`,`Direccion`,`id_Ciudad`) VALUES (id_Cliente,Direccion,id_Ciudad);
+    COMMIT; 
+END;
+
+DROP PROCEDURE IF EXISTS sp_UpdateDireccion;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdateDireccion
+(
+IN id_Direc int,
+IN id_Cliente int,
+IN Direccion nvarchar(50),
+IN id_Ciudad int
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE UPDATE LA DIRECCIÓN' as message;
+	END;
+    IF (id_Direc = 0 or id_Direc is null)
+    THEN
+		SELECT 'El id de la direccion no puede ser nula o cero.' as message;
+    END IF;
+	IF (id_Cliente = 0 or id_Cliente is null)
+    THEN
+		SELECT 'El id del cliente no puede ser nula o cero.' as message;
+    END IF;
+    IF (LENGTH(Direccion) = 0 or Direccion= " ")
+    THEN
+		SELECT 'La direccion no puede ser nula o con valor en blanco.' as message;
+    END IF;
+    IF (id_Ciudad = 0 or id_Ciudad is null)
+    THEN
+		SELECT 'El id de la ciudad no puede ser nula o cero.' as message;
+    END IF;
+ 	START TRANSACTION;
+		UPDATE DIRECCIONES SET `id_Cliente` = id_Cliente ,`Direccion` = Direccion ,`id_Ciudad` = id_Ciudad  WHERE `id_Direct` = id_Direc; 
+    COMMIT; 
+    
+END;
+
+DROP PROCEDURE IF EXISTS sp_DeleteDireccion;
+DELIMITER $$
+CREATE PROCEDURE sp_DeleteDireccion
+(
+IN id_Direct int
+)
+BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR UNA DIRECCION' as message;
+	END;
+    IF (id_Direct = 0 or id_Direct is null)
+    THEN
+		SELECT 'EL id de la direccion no puede ser nula o cero.' as message;
+    END IF;
+ 	START TRANSACTION;
+		DELETE FROM DIRECCIONES WHERE `id_Direct` = id_Direct ;
+    COMMIT; 
+    
+END;
+
+DROP PROCEDURE IF EXISTS sp_SelectWhereDireccion;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectWhereDireccion
+(
+IN id_Direct int,
+IN consulta nvarchar(50)
+)
+BEGIN
+
+	DECLARE _consultalike NVARCHAR(100) ;
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA' as message;
+	END;
+    IF (id_Direct = 0 or id_Direct is null)
+    THEN
+		SELECT 'EL id del producto no puede ser nula o cero.' as message;
+    END IF;
+    IF (LENGTH(consulta) = 0 or consulta = " ")
+    THEN
+		SELECT 'La consulta del producto no puede ser nula o con valor en blanco.' as message;
+    END IF;
+ 	START TRANSACTION;
+		SET _consultalike = CONCAT('%',consulta,'%');
+        
+        SELECT DIR.`id_Direct` AS ID, CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) AS CLIENTE,DIR.`Direccion` AS DIRECCION,CIU.`Uk_Nombre` AS CIUDAD,PS.`Uk_Pais` AS PAIS 
+        FROM DIRECCIONES as DIR
+        JOIN CLIENTE as CLI
+        ON (DIR.`id_Cliente` = CLI.`id_Cliente`)
+        JOIN CIUDAD AS CIU
+        ON(DIR.`id_Ciudad` = CIU.`id_Ciudad`)
+        JOIN PAIS AS PS
+        ON(CIU.id_Pais  = PS.`id_Pais`)
+        WHERE DIR.`id_Direct` = id_Direct AND CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) like _consultalike OR
+        PD.`id_Direct` = id_Direct AND CIU.`Uk_Nombre` like _consultalike OR
+        PD.`id_Direct` = id_Direct AND PS.`Uk_Pais` like _consultalike OR
+        PD.`id_Direct` = id_Direct AND DIR.`Direccion` like _consultalike
+        LIMIT 30;
+        
+    COMMIT; 
+    
+END;
+DROP VIEW IF EXISTS v_sSelectDireccion;
+CREATE VIEW v_sSelectDireccion
+AS
+	SELECT DIR.`id_Direct` AS ID, CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) AS CLIENTE,DIR.`Direccion` AS DIRECCION,CIU.`Uk_Nombre` AS CIUDAD,PS.`Uk_Pais` AS PAIS 
+	FROM DIRECCIONES as DIR
+	JOIN CLIENTE as CLI
+	ON (DIR.`id_Cliente` = CLI.`id_Cliente`)
+	JOIN CIUDAD AS CIU
+	ON(DIR.`id_Ciudad` = CIU.`id_Ciudad`)
+	JOIN PAIS AS PS
+	ON(CIU.id_Pais  = PS.`id_Pais`)
+    LIMIT 30;
 
 ####################################  PRODUCTOS ############################################
 DROP PROCEDURE IF EXISTS sp_InsertProductos;
@@ -772,7 +943,6 @@ BEGIN
         ON(SUB.`id_Category` = CAT.`id_Categoria`)
         WHERE PD.`id_Product` = id_product AND CAT.`Nom_Category` like _consultalike OR
         PD.`id_Product` = id_product AND SUB.`Nom_SubCategory` like _consultalike OR
-        PD.`id_Product` = id_product AND CAT.`Nom_Category` like _consultalike OR
         PD.`id_Product` = id_product AND PD.`Descript_Product` like _consultalike OR
         PD.`id_Product` = id_product AND PD.`Status` like _consultalike
         LIMIT 30;
@@ -780,6 +950,7 @@ BEGIN
     COMMIT; 
     
 END;
+
 
 DROP VIEW IF EXISTS v_sSelectProducto;
 CREATE VIEW v_sSelectProducto
