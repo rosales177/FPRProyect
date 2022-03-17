@@ -902,6 +902,7 @@ AS
 	 SELECT RL.id_Roll,RL.Descript_Roll FROM ROLL as RL LIMIT 30;
 ####################################################################USER ###################################################################
 ### ESTA PARA UNA REVISION :
+SELECT * FROM USER_
 DROP PROCEDURE IF EXISTS sp_InsertUser;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertUser
@@ -954,10 +955,9 @@ DELIMITER $$
 CREATE PROCEDURE sp_UpdateUser
 (
 IN id_Cliente int,
-IN  id_Roll int,
 IN _Username nvarchar(250),
-IN _Password nvarchar(250),
-IN _Status bit(1)
+IN _Password nvarchar(250)
+
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -970,11 +970,6 @@ sp:BEGIN
 		SELECT 'El id del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-	IF (id_Roll = 0 or id_Roll is null)
-    THEN
-		SELECT 'El id del rol no puede ser nula o cero.' as message;
-        LEAVE sp;
-    END IF;
     IF (LENGTH(_Username) = 0 or _Username= " ")
     THEN
 		SELECT 'El username no puede ser nula o con valor en blanco.' as message;
@@ -985,15 +980,11 @@ sp:BEGIN
 		SELECT 'El password no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
-    IF ((_Status < 0 or _Status > 1) or _Status is null)
-    THEN
-		SET _Status = 0;
-        LEAVE sp;
-    END IF;
  	START TRANSACTION;
-		UPDATE USER_ SET `_Username` = _Username,`_Password` = _Password WHERE `id_Cliente` = id_Cliente AND `id_Roll` =  id_Roll AND `_Status` =_Status
+		UPDATE USER_ SET  `_Username` = _Username,`_Password` = _Password  WHERE `id_Cliente` = id_Cliente;
     COMMIT; 
 END;
+
 
 DROP PROCEDURE IF EXISTS sp_DeleteUser;
 DELIMITER $$
@@ -1038,13 +1029,14 @@ sp:BEGIN
  	START TRANSACTION;
 		SET _consultalike = CONCAT('%',consulta,'%');
         
-        SELECT CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) AS USER_,RL.Descript_Roll AS ROLL,US._Username,US._Password,US._Status
+        SELECT CLI.Nombre_Cliente,CLI.Apellido_Cliente,RL.Descript_Roll AS ROLL,US._Username,US._Password,US._Status
 		FROM USER_ as US
 		JOIN CLIENTE as CLI
 		ON (US.`id_Cliente` = CLI.`id_Cliente`)
 		JOIN ROLL AS RL
 		ON(US.`id_Cliente`= RL.`id_Roll`)
-        WHERE  CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) like _consultalike OR
+        WHERE  CLI.Nombre_Cliente like _consultalike OR
+												CLI.Apellido_Cliente like _consultalike OR
 												RL.`Descript_Roll` like _consultalike OR
 												US.`_Username` like _Username OR
 												US.`_Status` like _consultalike LIMIT 30;
@@ -1054,7 +1046,7 @@ END;
 DROP VIEW IF EXISTS v_sSelectUser;
 CREATE VIEW v_sSelectuser
 AS
-	SELECT CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) AS USER_,RL.Descript_Roll AS ROLL,US._Username,US._Password,US._Status
+	SELECT CLI.Nombre_Cliente,CLI.Apellido_Cliente ,Descript_Roll AS ROLL,US._Username,US._Password,US._Status
 	FROM USER_ as US
 	JOIN CLIENTE as CLI
 	ON (US.`id_Cliente` = CLI.`id_Cliente`)
@@ -1065,6 +1057,292 @@ AS
 SELECT * FROM ROLL
 SELECT * FROM CLIENTE
 select * from USER_
+##############################################################MEDIODEPAGO###############################################################
+DROP PROCEDURE IF EXISTS sp_InsertMedioPago;
+DELIMITER $$
+CREATE PROCEDURE sp_InsertMedioPago
+(
+IN id_Cliente int,
+IN MedioPago nvarchar(250)
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UN MEDIO DE PAGO' as message;
+	END;
+    IF (id_Cliente = 0 or id_Cliente is null)
+    THEN
+		SELECT 'El id del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(MedioPago) = 0 or MedioPago= " ")
+    THEN
+		SELECT 'El medio de pago no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		INSERT INTO MEDIOPAGO (`id_Cliente`,`MedioPago`) VALUES (id_Cliente,MedioPago);
+    COMMIT; 
+END;
+
+DROP PROCEDURE IF EXISTS sp_UpdateMedioPago;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdateMedioPago
+(
+IN id_MedioPago int,
+IN id_Cliente int,
+IN MedioPago nvarchar(250)
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR EL PEDIO DE PAGO' as message;
+	END;
+    IF (id_MedioPago= 0 or id_MedioPago is null)
+    THEN
+		SELECT 'El id del medio de pago no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (id_Cliente = 0 or id_Cliente is null)
+    THEN
+		SELECT 'El id del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(MedioPago) = 0 or MedioPago= " ")
+    THEN
+		SELECT 'El medio de pago no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		UPDATE MEDIOPAGO SET `id_Cliente` = id_Cliente,`MedioPago`= MedioPago WHERE `id_MedioPago` = d_MedioPago;
+    COMMIT;
+END;
+
+
+DROP PROCEDURE IF EXISTS sp_DeleteMedioPago;
+DELIMITER $$
+CREATE PROCEDURE sp_DeleteMedioPago
+(
+IN id_MedioPago int
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR MEDIO DE PAGO' as message;
+	END;
+    IF (id_MedioPago= 0 or id_MedioPago is null)
+    THEN
+		SELECT 'El id del medio de pago no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		DELETE FROM MEDIOPAGO WHERE `id_MedioPago` = id_MedioPago ;
+    COMMIT; 
+END;
+
+DROP PROCEDURE IF EXISTS sp_SelectWhereMedioPago;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectWhereMedioPago
+(
+IN id_MedioPago int,
+IN consulta nvarchar(50)
+)
+sp:BEGIN
+
+	DECLARE _consultalike NVARCHAR(100) ;
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR UNA BUSQUEDA' as message;
+	END;
+    IF (id_MedioPago = 0 or id_MedioPago is null)
+    THEN
+		SELECT 'EL id de la Subcategoria no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(consulta) = 0 or consulta = " ")
+    THEN
+		SELECT 'La consulta del medio de pago no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		SET _consultalike = CONCAT('%',consulta,'%');
+        
+        SELECT MP.`id_MedioPago` AS ID, CONCAT_WS(' ',CL.Nombre_Cliente,CL.Apellido_Cliente) AS CLIENTE ,MP.`MedioPago` AS MEDIOPAGO FROM MEDIOPAGO AS MP
+        JOIN CLIENTE AS CL
+        ON(MP.`id_Cliente` = CL.`id_Cliente`)
+        WHERE MP.`id_MedioPago` = id_MedioPago AND CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) like _consultalike OR 
+        MP.`id_MedioPago` = id_MedioPago AND  `MedioPago` like _consultalike;
+    COMMIT; 
+END;
+
+DROP VIEW IF EXISTS v_sSelectMedioPago;
+CREATE VIEW v_sSelectMedioPago
+AS
+		SELECT MP.`id_MedioPago` AS ID, CONCAT_WS(' ',CL.Nombre_Cliente,CL.Apellido_Cliente) AS CLIENTE ,MP.`MedioPago` AS MEDIOPAGO FROM MEDIOPAGO AS MP
+		JOIN CLIENTE AS CL
+        ON(MP.`id_Cliente` = CL.`id_Cliente`)
+
+###############################################CLIENTE###############################################################################
+
+DROP PROCEDURE IF EXISTS sp_InsertCliente;
+DELIMITER $$
+CREATE PROCEDURE sp_InsertCliente
+(
+IN Nombre_Cliente nvarchar(250),
+IN Apellido_Cliente nvarchar(250),
+IN Edad_Cliente smallint,
+IN Correo nvarchar(250),
+IN Contacto char(20)
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR CLIENTE' as message;
+	END;
+    IF (LENGTH(Nombre_Cliente) = 0 or Nombre_Cliente= " ")
+    THEN
+		SELECT 'El nombre del cliente no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+     IF (LENGTH(Apellido_Cliente) = 0 or Apellido_Cliente= " ")
+    THEN
+		SELECT 'El apellido del cliente no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (Edad_Cliente= 0 or Edad_Cliente is null)
+    THEN
+		SELECT 'La edad del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(Contacto) = 0 or Contacto= " ")
+    THEN
+		SELECT 'El contacto no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		INSERT INTO CLIENTE(`Nombre_Cliente`,`Apellido_Cliente`,`Edad_Cliente`,`Correo`,`Contacto`) VALUES (Nombre_Cliente,Apellido_Cliente,Edad_Cliente,Correo,Contacto );
+    COMMIT; 
+END;
+
+DROP PROCEDURE IF EXISTS sp_UpdateCliente;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdateCliente
+(
+IN id_Cliente int,
+IN Nombre_Cliente nvarchar(250),
+IN Apellido_Cliente nvarchar(250),
+IN Edad_Cliente smallint,
+IN Correo nvarchar(250),
+IN Contacto char(20)
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR CLIENTE' as message;
+	END;
+    IF (id_Cliente= 0 or id_Cliente is null)
+    THEN
+		SELECT 'EL id del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(Nombre_Cliente) = 0 or Nombre_Cliente= " ")
+    THEN
+		SELECT 'El nombre del cliente no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+     IF (LENGTH(Apellido_Cliente) = 0 or Apellido_Cliente= " ")
+    THEN
+		SELECT 'El apellido del cliente no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (Edad_Cliente= 0 or Edad_Cliente is null)
+    THEN
+		SELECT 'La edad del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(Contacto) = 0 or Contacto= " ")
+    THEN
+		SELECT 'El contacto no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+	END IF;
+ 	START TRANSACTION;
+		UPDATE CLIENTE SET `Nombre_Cliente`=Nombre_Cliente,`Apellido_Cliente`=Apellido_Cliente,`Edad_Cliente`= Edad_Cliente,`Correo`= Correo,`Contacto`= Contacto WHERE `id_Cliente` = id_Cliente;
+    COMMIT;
+END;
+
+
+DROP PROCEDURE IF EXISTS sp_DeleteCliente;
+DELIMITER $$
+CREATE PROCEDURE sp_DeleteCliente
+(
+IN id_Cliente int
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR CLIENTE' as message;
+	END;
+    IF (id_Cliente= 0 or id_Cliente is null)
+    THEN
+		SELECT 'El id del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		DELETE FROM CLIENTE WHERE `id_Cliente` = id_Cliente ;
+    COMMIT; 
+END;
+
+DROP PROCEDURE IF EXISTS sp_SelectWhereCliente;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectWhereCliente
+(
+IN id_Cliente int,
+IN consulta nvarchar(50)
+)
+sp:BEGIN
+
+	DECLARE _consultalike NVARCHAR(100) ;
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR UNA BUSQUEDA' as message;
+	END;
+    IF (id_Cliente = 0 or id_Cliente is null)
+    THEN
+		SELECT 'EL id del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(consulta) = 0 or consulta = " ")
+    THEN
+		SELECT 'La consulta del medio de pago no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		SET _consultalike = CONCAT('%',consulta,'%');
+        
+        SELECT CL.`id_Cliente`,CL.`Nombre_Cliente`,CL.`Apellido_Cliente`,CL`Edad_Cliente`,CL`Correo`,CL`Contacto`
+        FROM CLIENTE AS CL
+        WHERE CL.`id_Cliente` = id_Cliente AND CL.`Nombre_Cliente` like _consultalike OR 
+			CL.`id_Cliente` = id_Cliente AND  CL.`Apellido_Cliente` like _consultalike OR 
+			CL.`id_Cliente` = id_Cliente AND  CL.`Correo` like _consultalike OR 
+			CL.`id_Cliente` = id_Cliente AND  CL.`Contacto` like _consultalike;
+    COMMIT; 
+END;
+
+DROP VIEW IF EXISTS v_sSelectCliente;
+CREATE VIEW v_sSelectCliente
+AS
+	SELECT CL.`id_Cliente`,CL.`Nombre_Cliente`,CL.`Apellido_Cliente`,CL.`Edad_Cliente`,CL.`Correo`,CL.`Contacto` FROM CLIENTE AS CL
+		
+
+
 ###########################################################  PRODUCTOS #####################################################################
 DROP PROCEDURE IF EXISTS sp_InsertProductos;
 DELIMITER $$
