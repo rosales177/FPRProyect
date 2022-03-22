@@ -162,28 +162,26 @@ ALTER TABLE   PAIS DROP CONSTRAINT Uk_Nombre_Pais;
 ALTER TABLE PAIS ADD CONSTRAINT Uk_Nombre_Pais UNIQUE (Uk_Pais);
 ALTER TABLE CLIENTE DROP CONSTRAINT Chk_Correo;
 ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Correo CHECK(Correo like '%@%.%___');
-/*ESTA EN BUSQUEDA Chk_Telefono*/
 ############################################### PROCEDIMIENTOS ALMACENADOS ##########################################################
 ################################################CATEGORIA #########################################################################
 DROP PROCEDURE IF EXISTS sp_InsertCategoria;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertCategoria
-(IN nom_Category NVARCHAR(100))
-sp:BEGIN	
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION
-	BEGIN
-		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA CATEGORIA' as message;
-        LEAVE sp;
-	END;
-	IF (LENGTH(nom_Category) = 0 or nom_Category = " ")
+(IN nom_Category VARCHAR(100))
+sp: BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        rollback;
+        SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA CATEGORIA' as message;
+    END;
+    IF (LENGTH(nom_Category) = 0 or nom_Category = " ")
     THEN
-		SELECT 'EL nombre de la categoria no puede ser nula o con valor en blanco.' as message;
+        SELECT 'EL nombre de la categoria no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
-	START TRANSACTION;
-		INSERT INTO CATEGORIA (`Nom_Category`) VALUES (nom_Category);
-    COMMIT; 
+    START TRANSACTION;
+        INSERT INTO CATEGORIA (`Nom_Category`) VALUES (nom_Category);
+    COMMIT;
 END;
 
 DROP PROCEDURE IF EXISTS sp_UpdateCategoria;
@@ -198,7 +196,6 @@ sp:BEGIN
 	BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR UNA CATEGORIA' as message;
-        LEAVE sp;
 	END;
 	IF (LENGTH(nom_Category) = 0 or nom_Category = " ")
     THEN
@@ -227,7 +224,6 @@ sp:BEGIN
 	BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR UNA CATEGORIA' as message;
-        LEAVE sp;
 	END;
     IF (id_Category = 0 OR id_Category is null)
     THEN
