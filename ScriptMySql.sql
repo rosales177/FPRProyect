@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS USER_
 	id_Roll int not null,
 	_Username nvarchar(20),
 	_Password nvarchar(100),
-	_Status bit,
+	_Status bool,
 	CONSTRAINT Fk_User_Cliente
     FOREIGN KEY (id_Cliente)
     REFERENCES CLIENTE(id_Cliente),
@@ -164,6 +164,13 @@ ALTER TABLE PAIS ADD CONSTRAINT Uk_Nombre_Pais UNIQUE (Uk_Pais);
 ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Correo CHECK(Correo like '%@%.%___');
 ############################################### PROCEDIMIENTOS ALMACENADOS ##########################################################
 ################################################CATEGORIA#########################################################################
+select * from Categoria
+insert into Categoria(Nom_Category)values('Blanco')
+select * from subcategorias
+insert into subcategorias(id_Category,Nom_SubCategory)values(1,'Zapatilla')
+select * from productos
+insert into productos(id_SubCategory,Descript_Product,Precio,Stock,Img,_Status)values(1,'Zapatilla Blanca',80,20,'zapatilla.png',1)
+
 DROP PROCEDURE IF EXISTS sp_InsertCategoria;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertCategoria
@@ -1202,19 +1209,18 @@ AS
 	 SELECT RL.id_Roll,RL.Descript_Roll FROM ROLL as RL LIMIT 30;
      
 SELECT * FROM v_sSelectRoll;	
-####################################################################USER ###################################################################
-### ESTA PARA UNA REVISION :
-SELECT * FROM USER_
-select * from Roll
+####################################################################USER###################################################################
+
+INSERT INTO ROLL(Descript_Roll)VALUES("Usuario")
 DROP PROCEDURE IF EXISTS sp_InsertUser;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertUser
 (
-IN id_Cliente int,
-IN  id_Roll int,
-IN _Username nvarchar(250),
+IN idCliente int,
+IN idRoll int,
+IN Username nvarchar(250),
 IN _Password nvarchar(250),
-IN _Status bit(1)
+IN _Status bool
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -1222,18 +1228,18 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UN USER' as message;
 	END;
-    IF (id_Cliente = 0 or id_Cliente is null)
+    IF (idCliente = 0 or idCliente is null)
     THEN
 		SELECT 'El id del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
     
-	IF (id_Roll = 0 or id_Roll is null)
+	IF (idRoll = 0 or idRoll is null)
     THEN
 		SELECT 'El id del rol no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-    IF (LENGTH(_Username) = 0 or _Username= " ")
+    IF (LENGTH(Username) = 0 or Username= " ")
     THEN
 		SELECT 'El username no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
@@ -1249,15 +1255,14 @@ sp:BEGIN
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		INSERT INTO USER_ (`id_Cliente`,`id_Roll`,`_Username`,`_Password`,`_Status`) VALUES (id_Cliente,id_Roll,_Username,_Password,_Status);
+		INSERT INTO USER_ (`id_Cliente`,`id_Roll`,`_Username`,`_Password`,`_Status`) VALUES (idCliente,idRoll,Username,_Password,_Status);
     COMMIT; 
 END;
-
 DROP PROCEDURE IF EXISTS sp_UpdateUser;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdateUser
 (
-IN id_Cliente int,
+IN idCliente int,
 IN _Username nvarchar(250),
 IN _Password nvarchar(250)
 
@@ -1268,7 +1273,7 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR USER' as message;
 	END;
-    IF (id_Cliente = 0 or id_Cliente is null)
+    IF (idCliente = 0 or idCliente is null)
     THEN
 		SELECT 'El id del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
@@ -1284,16 +1289,15 @@ sp:BEGIN
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		UPDATE USER_ SET  `_Username` = _Username,`_Password` = _Password  WHERE `id_Cliente` = id_Cliente;
+		UPDATE USER_ SET  `_Username` = _Username,`_Password` = _Password  WHERE `id_Cliente` = idCliente;
     COMMIT; 
 END;
-
 
 DROP PROCEDURE IF EXISTS sp_DeleteUser;
 DELIMITER $$
 CREATE PROCEDURE sp_DeleteUser
 (
-IN id_Cliente int
+IN idCliente int
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -1301,13 +1305,41 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR USER' as message;
 	END;
-    IF (id_Cliente = 0 or id_Cliente is null)
+    IF (idCliente = 0 or idCliente is null)
     THEN
 		SELECT 'El id del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		DELETE FROM USER_ WHERE `id_Cliente` = id_Cliente;
+		DELETE FROM USER_ WHERE `id_Cliente` = idCliente;
+    COMMIT; 
+END;
+
+DROP PROCEDURE IF EXISTS sp_SelectIdCliente;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectIdCliente
+(
+IN idCliente int
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA' as message;
+	END;
+    IF (idCliente = 0 or idCliente is null)
+    THEN
+		SELECT 'El id del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+        SELECT CLI.Nombre_Cliente,CLI.Apellido_Cliente,RL.Descript_Roll,US._Username,US._Password,US._Status
+		FROM USER_ as US
+		JOIN CLIENTE as CLI
+		ON (US.`id_Cliente` = CLI.`id_Cliente`)
+		JOIN ROLL AS RL
+		ON(US.`id_Cliente`= RL.`id_Roll`)
+        WHERE  CLI.`id_Cliente` = idCliente;
     COMMIT; 
 END;
 
@@ -1349,17 +1381,17 @@ END;
 DROP VIEW IF EXISTS v_sSelectUser;
 CREATE VIEW v_sSelectuser
 AS
-	SELECT CLI.Nombre_Cliente,CLI.Apellido_Cliente ,Descript_Roll AS ROLL,US._Username,US._Password,US._Status
+	SELECT CLI.Nombre_Cliente,CLI.Apellido_Cliente ,Descript_Roll,US._Username,US._Password,US._Status
 	FROM USER_ as US
 	JOIN CLIENTE as CLI
 	ON (US.`id_Cliente` = CLI.`id_Cliente`)
 	JOIN ROLL AS RL
 	ON(US.`id_Cliente`= RL.`id_Roll`)
     LIMIT 30;
+select * from v_sSelectUser
+DELETE FROM USER_ WHERE id_Cliente= 1
 
-SELECT * FROM ROLL
-SELECT * FROM CLIENTE
-select * from USER_
+
 ##############################################################MEDIODEPAGO###############################################################
 DROP PROCEDURE IF EXISTS sp_InsertMedioPago;
 DELIMITER $$
@@ -1490,7 +1522,6 @@ AS
         ON(MP.`id_Cliente` = CL.`id_Cliente`)
 
 ###############################################CLIENTE###############################################################################
-
 DROP PROCEDURE IF EXISTS sp_InsertCliente;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertCliente
@@ -1536,10 +1567,10 @@ DROP PROCEDURE IF EXISTS sp_UpdateCliente;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdateCliente
 (
-IN id_Cliente int,
-IN Nombre_Cliente nvarchar(250),
-IN Apellido_Cliente nvarchar(250),
-IN Edad_Cliente smallint,
+IN idCliente int,
+IN NombreCliente nvarchar(250),
+IN ApellidoCliente nvarchar(250),
+IN EdadCliente smallint,
 IN Correo nvarchar(250),
 IN Contacto char(20)
 )
@@ -1549,22 +1580,22 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR CLIENTE' as message;
 	END;
-    IF (id_Cliente= 0 or id_Cliente is null)
+    IF (idCliente= 0 or idCliente is null)
     THEN
 		SELECT 'EL id del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-    IF (LENGTH(Nombre_Cliente) = 0 or Nombre_Cliente= " ")
+    IF (LENGTH(NombreCliente) = 0 or NombreCliente= " ")
     THEN
 		SELECT 'El nombre del cliente no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
-     IF (LENGTH(Apellido_Cliente) = 0 or Apellido_Cliente= " ")
+     IF (LENGTH(ApellidoCliente) = 0 or ApellidoCliente= " ")
     THEN
 		SELECT 'El apellido del cliente no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
-    IF (Edad_Cliente= 0 or Edad_Cliente is null)
+    IF (EdadCliente= 0 or EdadCliente is null)
     THEN
 		SELECT 'La edad del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
@@ -1575,16 +1606,15 @@ sp:BEGIN
         LEAVE sp;
 	END IF;
  	START TRANSACTION;
-		UPDATE CLIENTE SET `Nombre_Cliente`=Nombre_Cliente,`Apellido_Cliente`=Apellido_Cliente,`Edad_Cliente`= Edad_Cliente,`Correo`= Correo,`Contacto`= Contacto WHERE `id_Cliente` = id_Cliente;
+		UPDATE CLIENTE SET `Nombre_Cliente`=NombreCliente,`Apellido_Cliente`=ApellidoCliente,`Edad_Cliente`= EdadCliente,`Correo`= Correo,`Contacto`= Contacto WHERE `id_Cliente` = idCliente;
     COMMIT;
 END;
-
 
 DROP PROCEDURE IF EXISTS sp_DeleteCliente;
 DELIMITER $$
 CREATE PROCEDURE sp_DeleteCliente
 (
-IN id_Cliente int
+IN idCliente int
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -1592,13 +1622,33 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR CLIENTE' as message;
 	END;
-    IF (id_Cliente= 0 or id_Cliente is null)
+    IF (idCliente= 0 or idCliente is null)
     THEN
 		SELECT 'El id del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		DELETE FROM CLIENTE WHERE `id_Cliente` = id_Cliente ;
+		DELETE FROM CLIENTE WHERE `id_Cliente` = idCliente;
+    COMMIT; 
+END;
+
+DROP PROCEDURE IF EXISTS sp_SelectClientsId;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectClientsId
+(
+IN idCliente int
+)
+sp:BEGIN
+    IF (idCliente = 0 or idCliente is null)
+    THEN
+		SELECT 'EL id del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+        SELECT CL.`id_Cliente`,CL.`Nombre_Cliente`,CL.`Apellido_Cliente`,CL.`Edad_Cliente`,CL.`Correo`,CL.`Contacto`
+        FROM CLIENTE AS CL
+        WHERE CL.`id_Cliente` = idCliente;
+			
     COMMIT; 
 END;
 
@@ -1633,7 +1683,7 @@ sp:BEGIN
         SELECT CL.`id_Cliente`,CL.`Nombre_Cliente`,CL.`Apellido_Cliente`,CL`Edad_Cliente`,CL`Correo`,CL`Contacto`
         FROM CLIENTE AS CL
         WHERE CL.`id_Cliente` = idCliente AND CL.`Nombre_Cliente` like _consultalike OR 
-			CL.`id_Cliente` = idCliente AND  CL.`Apellido_Cliente` like _consultalike OR 
+			CL.`id_Cliente` = idCliente AND  CL.`Apel_Usernamelido_Cliente` like _consultalike OR 
 			CL.`id_Cliente` = idCliente AND  CL.`Correo` like _consultalike OR 
 			CL.`id_Cliente` = idCliente AND  CL.`Contacto` like _consultalike;
     COMMIT; 
@@ -1643,13 +1693,9 @@ DROP VIEW IF EXISTS v_sSelectCliente;
 CREATE VIEW v_sSelectCliente
 AS
 	SELECT CL.`id_Cliente`,CL.`Nombre_Cliente`,CL.`Apellido_Cliente`,CL.`Edad_Cliente`,CL.`Correo`,CL.`Contacto` FROM CLIENTE AS CL		
-#pruebas##
-#call sp_InsertCategoria('Lapiz');
-#call sp_UpdateCategoria(10,'Folder');
-#call sp_DeleteCategoria(10);
-#call sp_SelectWhereCategoria(15,'Cama');
-#CALL sp_InsertProductos(1,'Corbata',60,50,'corbata.pgn',1) 
-#call sp_UpdateSubCategoria(1,5,'Ancianos')
-#call sp_InsertSubCategoria(7,'Paracas')
+
+SELECT * FROM v_sSelectCliente
+
+
 
 
