@@ -2,21 +2,26 @@ DROP DATABASE IF EXISTS DB_OLX;
 CREATE DATABASE DB_OLX;
 USE DB_OLX;
 DROP TABLE IF EXISTS CLIENTE;  
- CREATE TABLE IF NOT EXISTS CLIENTE (
+ CREATE TABLE IF NOT EXISTS CLIENTE 
+ (
 	id_Cliente int not null auto_increment ,
 	Nombre_Cliente varchar(100) not null,
 	Apellido_Cliente varchar(100) not null,
 	Edad_Cliente smallint,
 	Correo varchar(100) not null,
 	Contacto char(20),
+    Img nvarchar(250) not null,
     PRIMARY KEY (id_Cliente) 
 );
 DROP TABLE IF EXISTS MEDIOPAGO;
 CREATE TABLE IF NOT EXISTS MEDIOPAGO
 (
-	id_MedioPago int not null,
+	id_MedioPago int not null auto_increment,
 	id_Cliente int not null,
 	MedioPago nvarchar(100) not null,
+    NumeroTarjeta char(50) not null,
+    CVV char(3) not null,
+    FechaVencimiento date not null,
     PRIMARY KEY(id_MedioPago),
     CONSTRAINT Fk_Mediopago_Cliente
     FOREIGN KEY (id_Cliente) 
@@ -59,7 +64,8 @@ DROP TABLE IF EXISTS ROLL;
 CREATE TABLE IF NOT EXISTS ROLL
 (
 	id_Roll int not null auto_increment,
-	Descript_Roll nvarchar(10),
+	Descript_Roll nvarchar(50),
+    _Value char(6),
     PRIMARY KEY(id_Roll)
 );
 DROP TABLE IF EXISTS USER_;
@@ -99,11 +105,20 @@ DROP TABLE IF EXISTS PRODUCTOS;
 CREATE TABLE IF NOT EXISTS PRODUCTOS
 (
 	id_Product int not null auto_increment,
+    Nombre_Product nvarchar(500) not null,
+    Marca_Product nvarchar(500) not null,
 	id_SubCategory int not null,
-	Descript_Product nvarchar(500) not null,
-	Precio smallint not null,
+	Descript_Product nvarchar(1000) not null,
+	Precio decimal(7,2) not null,
 	Stock smallint not null,
-	Img mediumblob not null, 
+    Unidad nvarchar(10) not null,
+    Moneda nvarchar(20) not null,
+	Img1 varchar(250) not null,
+    Img2 varchar(250) not null,
+    Img3 varchar(250) not null,
+    Img4 varchar(250) not null,
+    Img5 varchar(250) not null,
+    NDescuento smallint not null,
 	_Status bool,
     PRIMARY KEY(id_Product),
     CONSTRAINT  Fk_Productos_SubCategoria
@@ -114,29 +129,26 @@ DROP TABLE IF EXISTS PEDIDO;
 CREATE TABLE IF NOT EXISTS PEDIDO
 (
 	id_Cliente int not null,
-	N_Pedido varchar(10) not null,
+	N_Pedido smallint not null,
 	FechaEmision date not null,
 	Emp_Envio nvarchar(100) not null,
-	Sub_Total smallint not null,
+	Sub_Total decimal(7,2) not null,
+    Descuento decimal(7,2) not null,
 	Diret_Envio nvarchar(100) not null,
 	Total smallint not null,
-	TotalPagar smallint not null,
+	TotalPagar decimal(7,2) not null,
 	_Status bool,
     primary key (N_Pedido),
 	CONSTRAINT Fk_Pedido_Cliente 
     FOREIGN KEY (id_Cliente)
     REFERENCES CLIENTE(id_Cliente)
-    
 );
 DROP TABLE IF EXISTS CARRITOCOMPRA;
 CREATE TABLE IF NOT EXISTS CARRITOCOMPRA
 (
-	N_Pedido varchar(10) not null,
+	N_Pedido smallint not null,
 	id_Product int not null,
 	Car_Cantidad smallint not null,
-	Car_Imp1 smallint not null,
-	Car_Imp2 smallint not null,
-	Car_Total smallint not null,
     CONSTRAINT Fk_CarritoCompra_Productos
     FOREIGN KEY  (id_Product)
     REFERENCES PRODUCTOS(id_Product),
@@ -151,43 +163,58 @@ CREATE TABLE IF NOT EXISTS HISTORIALCOMPRA
 	Cliente nvarchar(100) not null,
 	FechaEmision date not null,
 	DirecEnvio nvarchar(100) not null,
-	SubTotal smallint not null,
-	Total smallint not null,
-	TotalPagar smallint not null
+	SubTotal decimal(7,2) not null,
+	Total decimal(7,2) not null,
+	TotalPagar decimal(7,2) not null,
+    Descuento decimal(7,2) not null
+);
+DROP TABLE IF EXISTS DESCUENTO;
+CREATE TABLE IF NOT EXISTS DESCUENTO
+(
+	id_Product int not null,
+    dscto1 smallint not null,
+    dscto2 smallint not null,
+    dscto3 smallint not null,
+    dscto4 smallint not null,
+    CONSTRAINT Fk_Descuento_Productos
+    FOREIGN KEY  (id_Product)
+    REFERENCES productos(id_Product)
+);
+DROP TABLE IF EXISTS CARACTERISTICAS;
+CREATE TABLE IF NOT EXISTS CARACTERISTICAS
+(
+	id_Product int not null,
+    Caracteristicas_product nvarchar(1500),
+    CONSTRAINT Fk_Caracterisitcas_Productos
+    FOREIGN KEY (id_Product)
+    REFERENCES productos(id_Product)
 );
 #################################################################################################################################
-#ALTER TABLE  CIUDAD DROP CONSTRAINT Uk_Nombre_Ciudad;
+#ALTER TABLE CIUDAD DROP CONSTRAINT Uk_Nombre_Ciudad;
 ALTER TABLE CIUDAD ADD CONSTRAINT Uk_Nombre_Ciudad UNIQUE (Uk_Nombre);
-#ALTER TABLE   PAIS DROP CONSTRAINT Uk_Nombre_Pais;
+#ALTER TABLE PAIS DROP CONSTRAINT Uk_Nombre_Pais;
 ALTER TABLE PAIS ADD CONSTRAINT Uk_Nombre_Pais UNIQUE (Uk_Pais);
 #ALTER TABLE CLIENTE DROP CONSTRAINT Chk_Correo;
-ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Correo CHECK(Correo like '%@%.%___');
-############################################### PROCEDIMIENTOS ALMACENADOS ##########################################################
-################################################CATEGORIA#########################################################################
-select * from Categoria
-insert into Categoria(Nom_Category)values('Blanco')
-select * from subcategorias
-insert into subcategorias(id_Category,Nom_SubCategory)values(1,'Zapatilla')
-select * from productos
-insert into productos(id_SubCategory,Descript_Product,Precio,Stock,Img,_Status)values(1,'Zapatilla Blanca',80,20,'zapatilla.png',1)
-
+ALTER TABLE CLIENTE ADD CONSTRAINT Chk_Correo CHECK(Correo like '__%@__%.%___');
+###############################################PROCEDIMIENTOSALMACENADOS##########################################################
+################################################CATEGORIA#########################################################################	
 DROP PROCEDURE IF EXISTS sp_InsertCategoria;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertCategoria
-(IN nom_Category VARCHAR(100))
+(IN nomCategory VARCHAR(100))
 sp: BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         rollback;
         SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA CATEGORIA' as message;
     END;
-    IF (LENGTH(nom_Category) = 0 or nom_Category = " ")
+    IF (LENGTH(nomCategory) = 0 or nomCategory = " ")
     THEN
         SELECT 'EL nombre de la categoria no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
     START TRANSACTION;
-        INSERT INTO CATEGORIA (`Nom_Category`) VALUES (nom_Category);
+        INSERT INTO CATEGORIA (`Nom_Category`) VALUES (nomCategory);
     COMMIT;
 END;
 
@@ -195,8 +222,8 @@ DROP PROCEDURE IF EXISTS sp_UpdateCategoria;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdateCategoria
 (
-IN id_Category int,
-IN nom_Category NVARCHAR(100)
+IN idCategory int,
+IN nomCategory NVARCHAR(100)
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -204,113 +231,93 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR UNA CATEGORIA' as message;
 	END;
-	IF (LENGTH(nom_Category) = 0 or nom_Category = " ")
+	IF (LENGTH(nomCategory) = 0 or nomCategory = " ")
     THEN
 		SELECT 'EL nombre de la categoria no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
-    IF (id_Category = 0 OR id_Category is null)
+    IF (idCategory = 0 OR idCategory is null)
     THEN
 		SELECT 'EL id de la categoria no puede ser nula o igual a cero.' as message;
         LEAVE sp;
     END IF;
 	START TRANSACTION;
-		UPDATE CATEGORIA SET `Nom_Category`= nom_Category WHERE `id_Categoria` = id_Category;
+		UPDATE CATEGORIA SET `Nom_Category`= nomCategory WHERE `id_Categoria` = idCategory;
     COMMIT; 
-    
 END;
 
 DROP PROCEDURE IF EXISTS sp_DeleteCategoria;
 DELIMITER $$
 CREATE PROCEDURE sp_DeleteCategoria
 (
-IN id_Category int
+IN categoriaid int
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR UNA CATEGORIA' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE DELETE UNA CATEGORIA' as message;
 	END;
-    IF (id_Category = 0 OR id_Category is null)
+    IF (categoriaid = 0 or categoriaid is null)
+    THEN
+		SELECT 'EL id de la categoria no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (not exists(SELECT id_Categoria FROM categoria WHERE id_Categoria= categoriaid))
+    THEN
+		SELECT 'No existente Id Categoria para el Delete.' as message;
+        LEAVE sp;
+	END IF;
+ 	START TRANSACTION;
+		DELETE CAR from subcategorias S join categoria C on(S.id_Category = C.id_Categoria) join productos P on(P.id_SubCategory = S.id_SubCategory) join caracteristicas CAR on(CAR.id_Product = P.id_Product) where C.id_Categoria = categoriaid;
+		DELETE DE from subcategorias S join categoria C on(S.id_Category = C.id_Categoria) join productos P on(P.id_SubCategory = S.id_SubCategory) join descuento DE on(DE.id_Product = P.id_Product) where C.id_Categoria = categoriaid;
+		DELETE CA from subcategorias S join categoria C on(S.id_Category = C.id_Categoria) join productos P on(P.id_SubCategory = S.id_SubCategory) join carritocompra CA on(CA.id_Product = P.id_Product) where C.id_Categoria = categoriaid;
+		DELETE P from subcategorias S join categoria C on(S.id_Category = C.id_Categoria) join productos P on(P.id_SubCategory = S.id_SubCategory) where C.id_Categoria = categoriaid; 
+		DELETE S from subcategorias S join categoria C on(S.id_Category = C.id_Categoria) where C.id_Categoria = categoriaid;
+		DELETE C FROM categoria C WHERE C.`id_Categoria` = categoriaid;
+    COMMIT; 
+    
+END;
+set SQL_SAFE_UPDATES = 0;
+
+DROP PROCEDURE IF EXISTS sp_SelectCategoryId;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectCategoryId
+(
+IN idCategory int
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECIONAR CATEGORIA' as message;
+	END;
+    IF (idCategory = 0 OR idCategory is null)
     THEN
 		SELECT 'EL id de la categoria no puede ser nula o igual a cero.' as message;
         LEAVE sp;
     END IF;
 	START TRANSACTION;
-		DELETE FROM CATEGORIA WHERE `id_Categoria` = id_Category;
+		SELECT CA.`id_Categoria` ,CA.`Nom_Category` FROM CATEGORIA AS CA  WHERE CA.`id_Categoria` = idCategory;
     COMMIT; 
 END;
 
-DROP PROCEDURE IF EXISTS sp_SelectId;
-DELIMITER $$
-CREATE PROCEDURE sp_SelectId
-(
-IN id_Category int
-)
-sp:BEGIN
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION
-	BEGIN
-		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECIONAR POR ID' as message;
-	END;
-    IF (id_Category = 0 OR id_Category is null)
-    THEN
-		SELECT 'EL id de la categoria no puede ser nula o igual a cero.' as message;
-        LEAVE sp;
-    END IF;
-    IF (not exists(select id_Categoria from categoria where id_Categoria = id_Category ))
-    THEN
-		SELECT 'El id no existente.' as message;
-        LEAVE sp;
-    END IF;
-	START TRANSACTION;
-		SELECT CA.`id_Categoria` ,CA.`Nom_Category` FROM CATEGORIA AS CA  WHERE CA.`id_Categoria` = id_Category;
-    COMMIT; 
-END;
-
-DROP PROCEDURE IF EXISTS sp_SelectWhereCategoria;
-DELIMITER $$
-CREATE PROCEDURE sp_SelectWhereCategoria
-(
-IN id_Category int,
-IN nom_Category nvarchar(100)
-)
-sp:BEGIN
-	DECLARE _consultalike NVARCHAR(100) ;
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION
-	BEGIN
-		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR UNA CATEGORIA' as message;
-	END;
-    IF (LENGTH(nom_Category) = 0 or nom_Category = " ")
-    THEN
-		SELECT 'EL nombre de la categoria no puede ser nula o con valor en blanco.' as message;
-        LEAVE sp;
-    END IF;
-    IF (id_Category = 0 OR id_Category is null)
-    THEN
-		SELECT 'EL id de la categoria no puede ser nula o igual a cero.' as message;
-        LEAVE sp;
-    END IF;
-	START TRANSACTION;
-		SET _consultalike = CONCAT('%',nom_Category,'%');
-		SELECT CA.`id_Categoria` AS ID,CA.`Nom_Category` AS CATEGORIA FROM CATEGORIA AS CA  WHERE CA.`id_Categoria` = id_Category or CA.`Nom_Category` like _consultalike;
-    COMMIT; 
-END;
+DROP VIEW IF EXISTS v_sCantidadCategory;
+CREATE VIEW v_sCantidadCategory
+AS
+	SELECT COUNT(*) CANTIDAD_CATEGORY FROM categoria;
 
 DROP VIEW IF EXISTS v_sSelectCategoria;
-CREATE VIEW v_sSelectCategorIA
+CREATE VIEW v_sSelectCategoria
 AS
-	SELECT CA.`id_Categoria` AS ID,CA.`Nom_Category` AS CATEGORIA FROM CATEGORIA AS CA  LIMIT 30
-SELECT * FROM v_sSelectCategoria
-#######################################################  SUBCATEGORIA ###########################################################################
+	SELECT CA.`id_Categoria`,CA.`Nom_Category` FROM CATEGORIA AS CA  LIMIT 30
+#######################################################SUBCATEGORIA ###########################################################################
 DROP PROCEDURE IF EXISTS sp_InsertSubCategoria;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertSubCategoria
 (
-IN id_Category int,
-IN nom_SubCategory nvarchar(100)
+IN idCategory int,
+IN nomSubCategory nvarchar(100)
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -318,18 +325,18 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA SUBCATEGORIA' as message;
 	END;
-	IF (id_Category = 0 or id_Category is null)
+	IF (idCategory = 0 or idCategory is null)
     THEN
 		SELECT 'EL id de la Subcategoria no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-    IF (LENGTH(nom_SubCategory) = 0 or nom_SubCategory = " ")
+    IF (LENGTH(nomSubCategory) = 0 or nomSubCategory = " ")
     THEN
 		SELECT 'EL nombre de la Subcategoria no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		INSERT INTO SUBCATEGORIAS (`id_Category`,`Nom_SubCategory`) VALUES (id_Category,nom_SubCategory);
+		INSERT INTO SUBCATEGORIAS (`id_Category`,`Nom_SubCategory`) VALUES (idCategory,nomSubCategory);
     COMMIT; 
 END;
 
@@ -337,9 +344,9 @@ DROP PROCEDURE IF EXISTS sp_UpdateSubCategoria;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdateSubCategoria
 (
-IN SubCategory int,
-IN Category int,
-IN NoSubCategory nvarchar(100)
+IN idSubCategory int,
+IN idCategory int,
+IN NombreSubCategory nvarchar(100)
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -347,23 +354,23 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE UPDATE SUBCATEGORIA' as message;
 	END;
-    IF (SubCategory = 0 or SubCategory is null)
+    IF (idSubCategory = 0 or idSubCategory is null)
     THEN
 		SELECT 'EL id de la Subcategoria no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-	IF (Category = 0 or Category is null)
+	IF (idCategory = 0 or idCategory is null)
     THEN
 		SELECT 'EL id de la Categoria no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-    IF (LENGTH(NoSubCategory) = 0 or NoSubCategory = " ")
+    IF (LENGTH(NombreSubCategory) = 0 or NombreSubCategory = " ")
     THEN
 		SELECT 'EL nombre de la Subcategoria no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
 	START TRANSACTION;
-		UPDATE subcategorias SET id_Category = Category ,Nom_SubCategory =NoSubCategory WHERE id_SubCategory = SubCategory;
+		UPDATE subcategorias SET id_Category = idCategory ,Nom_SubCategory =NombreSubCategory WHERE id_SubCategory = idSubCategory;
     COMMIT; 
 END;
 
@@ -377,22 +384,32 @@ sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA SUBCATEGORIA' as message;
+		SELECT 'A OCURRIDO UN ERROR AL DELETE UNA SUBCATEGORIA' as message;
 	END;
     IF (SubCategory = 0 or SubCategory is null)
     THEN
 		SELECT 'EL id de la Subcategoria no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
+    IF (not exists(SELECT id_SubCategory FROM subcategorias WHERE id_SubCategory= SubCategory))
+    THEN
+		SELECT 'No existente Id SubCategoria para el Delete.' as message;
+        LEAVE sp;
+	END IF;
  	START TRANSACTION;
-		DELETE FROM SUBCATEGORIAS WHERE `id_SubCategory` = SubCategory;
+		DELETE CAR from subcategorias S join productos P on(P.id_SubCategory = S.id_SubCategory) join caracteristicas CAR on(CAR.id_Product = P.id_Product) where S.`id_SubCategory` = SubCategory;
+		DELETE DE from subcategorias S join productos P on(P.id_SubCategory = S.id_SubCategory) join descuento DE on(DE.id_Product = P.id_Product) where S.`id_SubCategory` = SubCategory;
+		DELETE CA from subcategorias S join productos P on(P.id_SubCategory = S.id_SubCategory) join carritocompra CA on(CA.id_Product = P.id_Product) where S.`id_SubCategory` = SubCategory;
+		DELETE P from subcategorias S join productos P on(P.id_SubCategory = S.id_SubCategory) where S.`id_SubCategory` = SubCategory;
+		DELETE S from  subcategorias S WHERE S.`id_SubCategory` = SubCategory;
     COMMIT; 
     
 END;
+set SQL_SAFE_UPDATES = 0;
 
-DROP PROCEDURE IF EXISTS sp_SelectWhereId;
+DROP PROCEDURE IF EXISTS sp_SelectSubCategoryId;
 DELIMITER $$
-CREATE PROCEDURE sp_SelectWhereId
+CREATE PROCEDURE sp_SelectSubCategoryId
 (
 IN SubCategory int
 )
@@ -400,16 +417,11 @@ sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA SUBCATEGORIA' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECCIONAR UNA SUBCATEGORIA' as message;
 	END;
     IF (SubCategory = 0 or SubCategory is null)
     THEN
 		SELECT 'EL id de la Subcategoria no puede ser nula o cero.' as message;
-        LEAVE sp;
-    END IF;
-    IF (NOT EXISTS(SELECT `id_SubCategory` FROM SUBCATEGORIAS WHERE `id_SubCategory` = SubCategory))
-    THEN
-		SELECT 'EL id de la Subcategoria no existente.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
@@ -420,56 +432,68 @@ sp:BEGIN
     COMMIT; 
 END;
 
-DROP PROCEDURE IF EXISTS sp_SelectWhereSubCategoria;
+DROP VIEW IF EXISTS v_sCantidadSubCategory;
+CREATE VIEW v_sCantidadSubCategory
+AS SELECT COUNT(*) CANTIDAD_SUBCATEGORY FROM subcategorias;
+
+DROP VIEW IF EXISTS v_sSelectSubCategoria;
+CREATE VIEW v_sSelectSubCategoria
+AS
+	SELECT SUB.`id_SubCategory`,CAT.`Nom_Category`,SUB.`Nom_SubCategory` FROM SUBCATEGORIAS AS SUB JOIN CATEGORIA AS CAT ON(SUB.`id_Category` = CAT.`id_Categoria`) LIMIT 30
+    
+DROP PROCEDURE IF EXISTS sp_SelectSubCategoryXCategory;
 DELIMITER $$
-CREATE PROCEDURE sp_SelectWhereSubCategoria
+CREATE PROCEDURE sp_SelectSubCategoryXCategory
 (
-IN id_SubCategory int,
-IN consulta nvarchar(50)
+IN category nvarchar(50)
 )
 sp:BEGIN
-
 	DECLARE _consultalike NVARCHAR(100) ;
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    DECLARE a INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA SUBCATEGORIA' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA' as message;
 	END;
-    IF (id_SubCategory = 0 or id_SubCategory is null)
+    IF (LENGTH(category) = 0 or category = " ")
     THEN
-		SELECT 'EL id de la Subcategoria no puede ser nula o cero.' as message;
-        LEAVE sp;
-    END IF;
-    IF (LENGTH(consulta) = 0 or consulta = " ")
-    THEN
-		SELECT 'La consulta de la Subcategoria no puede ser nula o con valor en blanco.' as message;
+		SELECT 'La category de la Subcategoria no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		SET _consultalike = CONCAT('%',consulta,'%');
-        
-        SELECT SUB.`id_SubCategory` as ID ,CAT.`Nom_Category`,SUB.`Nom_SubCategory` AS SubCategoria FROM SUBCATEGORIAS AS SUB
-        JOIN CATEGORIA AS CAT
-        ON(SUB.`id_Category` = CAT.`id_Categoria`)
-        WHERE `id_SubCategory` = id_SubCategory AND CAT.`Nom_Category` like _consultalike OR `id_SubCategory` = id_SubCategory AND   `Nom_SubCategory` like _consultalike;
+		SET _consultalike = CONCAT_WS(' ',category);
+        SET a = ( SELECT count(*) from SUBCATEGORIAS SUB JOIN CATEGORIA CA ON(SUB.id_Category = CA.id_Categoria) WHERE CA.Nom_Category = _consultalike);
+        IF (a>0)
+        THEN
+			SELECT SUB.id_SubCategory,SUB.Nom_SubCategory
+            FROM SUBCATEGORIAS SUB JOIN CATEGORIA CA
+            ON(SUB.id_Category = CA.id_Categoria)
+            WHERE CA.Nom_Category = _consultalike
+            GROUP BY SUB.Nom_SubCategory;
+        ELSEIF(a=0)THEN 
+			SELECT 'No encontrado registro de SubCategorias de la Categoria.' as message;
+        END IF;
     COMMIT; 
 END;
-
-DROP VIEW IF EXISTS v_sSelectSubCategoria;
-CREATE VIEW v_sSelectSubCategorIA
-AS
-	SELECT SUB.`id_SubCategory` as ID ,CAT.`Nom_Category`,SUB.`Nom_SubCategory` AS SubCategoria FROM SUBCATEGORIAS AS SUB JOIN CATEGORIA AS CAT ON(SUB.`id_Category` = CAT.`id_Categoria`) LIMIT 30
-    
-###########################################################  PRODUCTOS #####################################################################
+###########################################################PRODUCTOS#####################################################################
 DROP PROCEDURE IF EXISTS sp_InsertProductos;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertProductos
 (
+IN NombreProduct nvarchar(100),
+IN MarcaProduct nvarchar(100),
 IN id_SubCategory int,
-IN descripcion nvarchar(250),
-IN precio numeric(15,4),
-IN stock int,
-IN image blob, 
+IN descripcion nvarchar(500),
+IN precio decimal(7,2),
+IN stock smallint,
+IN unidad nvarchar(10),
+IN moneda nvarchar(20),
+IN image1 nvarchar(250),
+IN image2 nvarchar(250),
+IN image3 nvarchar(250), 
+IN image4 nvarchar(250), 
+IN image5 nvarchar(250), 
+IN NDescuento smallint,
 IN _Status bool
 )
 sp:BEGIN
@@ -478,9 +502,24 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UN NUEVO PRODUCTO' as message;
 	END;
+    IF (LENGTH(NombreProduct) = 0 or NombreProduct= " ")
+    THEN
+		SELECT 'El nombre del producto no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(MarcaProduct) = 0 or MarcaProduct= " ")
+    THEN
+		SELECT 'La marca del producto no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
 	IF (id_SubCategory = 0 or id_SubCategory is null)
     THEN
-		SELECT 'El id de la subcategoria no puede ser nula o cero.' as message;
+		SELECT 'El id de la Subcategoria no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (NDescuento = 0 or NDescuento is null)
+    THEN
+		SELECT 'El NDescuento del producto no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
     IF (LENGTH(descripcion) = 0 or descripcion= " ")
@@ -490,21 +529,34 @@ sp:BEGIN
     END IF;
     IF (precio < 0 or precio is null)
     THEN
+		SET precio = 0;
 		SELECT 'El precio del producto no puede ser nula o menor a cero.' as message;
         LEAVE sp;
     END IF;
     IF (stock < 0 or stock is null)
     THEN
+		SET stock = 0;
 		SELECT 'El stock del producto no puede ser nula o menor a cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(unidad) = 0 or unidad= " ")
+    THEN
+		SELECT 'La unidad del producto no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(moneda) = 0 or moneda= " ")
+    THEN
+		SELECT 'La moneda del producto no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
     IF (_Status < 0 or _Status is null)
     THEN
 		SET _Status = 0;
+        SELECT 'El Status del producto no puede ser nula o menor a cero.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		INSERT INTO PRODUCTOS (`id_SubCategory`,`Descript_Product`,`Precio`,`Stock`,`Img`,`_Status`) VALUES (id_SubCategory,descripcion,precio,stock,image,_Status);
+		INSERT INTO PRODUCTOS (`Nombre_Product`,`Marca_Product`,`id_SubCategory`,`Descript_Product`,`Precio`,`Stock`,`Unidad`,`Moneda`,`Img1`,`Img2`,`Img3`,`Img4`,`Img5`,`NDescuento`,`_Status`) VALUES (NombreProduct,MarcaProduct,id_SubCategory,descripcion,precio,stock,unidad,moneda,image1,image2,image3,image4,image5,NDescuento,_Status);
     COMMIT; 
 END;
 
@@ -513,12 +565,21 @@ DELIMITER $$
 CREATE PROCEDURE sp_UpdateProducto
 (
 IN idproduct int,
-IN idSubCatego int,
-IN descrip nvarchar(250),
-IN preci numeric(15,4),
-IN stock int,
-IN imag blob, 
-IN _Statu bool
+IN NombreProduct nvarchar(100),
+IN MarcaProduct nvarchar(100),
+IN id_SubCategory int,
+IN descripcion nvarchar(500),
+IN precio decimal(7,2),
+IN stock smallint,
+IN unidad nvarchar(10),
+IN moneda nvarchar(20),
+IN image1 nvarchar(250),
+IN image2 nvarchar(250),
+IN image3 nvarchar(250), 
+IN image4 nvarchar(250), 
+IN image5 nvarchar(250),
+IN NDescuento smallint,
+IN _Status bool
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -526,38 +587,61 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR UN NUEVO PRODUCTO' as message;
 	END;
-    IF (idproduct = 0 or idproduct is null)
+    IF (LENGTH(NombreProduct) = 0 or NombreProduct= " ")
     THEN
-		SELECT 'El id de la categoria no puede ser nula o cero.' as message;
+		SELECT 'El nombre del producto no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
-	IF (idSubCatego = 0 or idSubCatego is null)
+    IF (LENGTH(MarcaProduct) = 0 or MarcaProduct= " ")
     THEN
-		SELECT 'El id de la subcategoria no puede ser nula o cero.' as message;
+		SELECT 'La marca del producto no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
-    IF (LENGTH(descrip) = 0 or descrip= " ")
+	IF (id_SubCategory = 0 or id_SubCategory is null)
+    THEN
+		SELECT 'El id de la Subcategoria no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (NDescuento = 0 or NDescuento is null)
+    THEN
+		SELECT 'El NDescuento del producto no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(descripcion) = 0 or descripcion= " ")
     THEN
 		SELECT 'La descripción del producto no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
-    IF (preci < 0 or preci is null)
+    IF (precio < 0 or precio is null)
     THEN
+		SET precio = 0;
 		SELECT 'El precio del producto no puede ser nula o menor a cero.' as message;
         LEAVE sp;
     END IF;
     IF (stock < 0 or stock is null)
     THEN
+		SET stock = 0;
 		SELECT 'El stock del producto no puede ser nula o menor a cero.' as message;
         LEAVE sp;
     END IF;
-    IF (_Statu < 0 or _Statu is null)
+    IF (LENGTH(unidad) = 0 or unidad= " ")
     THEN
-		SET _Statu = 0;
+		SELECT 'La unidad del producto no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(moneda) = 0 or moneda= " ")
+    THEN
+		SELECT 'La moneda del producto no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (_Status < 0 or _Status is null)
+    THEN
+		SET _Status = 0;
+        SELECT 'El Status del producto no puede ser nula o menor a cero.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		UPDATE Productos SET `id_SubCategory`=idSubCatego,`Descript_Product`=descrip,`Precio`=preci,`Stock`=stock,`Img`= imag,`_Status` = _Statu WHERE `id_Product` = idproduct; 
+		UPDATE Productos SET `Nombre_Product`=NombreProduct,`Marca_Product`=MarcaProduct,`id_SubCategory`=id_SubCategory,`Descript_Product`=descripcion,`Precio`=precio,`Stock`=stock,`Unidad`=unidad,`Moneda`=moneda,`Img1`=image1,`Img2`=image2,`Img3`=image3,`Img4`=image4,`Img5`=image5,`NDescuento` = NDescuento ,`_Status` = _Status WHERE `id_Product` = idproduct; 
     COMMIT; 
 END;
 
@@ -571,58 +655,155 @@ sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR EL PRODUCTO' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE DELETE UN PRODUCTO' as message;
 	END;
     IF (idproduct = 0 or idproduct is null)
     THEN
 		SELECT 'EL id del producto no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
+    IF (not exists(SELECT id_Product FROM productos WHERE id_Product= idproduct))
+    THEN
+		SELECT 'No existente Id Producto para el Delete.' as message;
+        LEAVE sp;
+	END IF;
  	START TRANSACTION;
-		DELETE FROM PRODUCTOS WHERE `id_Product` = idproduct ;
+		DELETE CAR from productos P join caracteristicas CAR on(CAR.id_Product = P.id_Product) where P.`id_Product` = idproduct;
+		DELETE DE from productos P join descuento DE on(DE.id_Product = P.id_Product) where P.`id_Product` = idproduct;
+		DELETE CA from productos P join carritocompra CA on(CA.id_Product = P.id_Product) where P.`id_Product` = idproduct;
+		DELETE P FROM productos AS P WHERE P.`id_Product` = idproduct;
     COMMIT; 
 END;
+set SQL_SAFE_UPDATES = 0;
 
-DROP PROCEDURE IF EXISTS sp_SelectWhereId;
+DROP PROCEDURE IF EXISTS sp_SelectProductoId;
 DELIMITER $$
-CREATE PROCEDURE sp_SelectWhereId
+CREATE PROCEDURE sp_SelectProductoId
 (
-IN id_produ int
+IN idproducto int
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECIONAR POR ID' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECIONAR PRODUCTO' as message;
 	END;
-    IF (id_produ = 0 OR id_produ is null)
+    IF (idproducto = 0 OR idproducto is null)
     THEN
 		SELECT 'EL id del producto no puede ser nula o igual a cero.' as message;
         LEAVE sp;
     END IF;
-    IF (not exists(select id_Product from PRODUCTOS where id_Product = id_produ ))
-    THEN
-		SELECT 'El id no existente.' as message;
-        LEAVE sp;
-    END IF;
  	START TRANSACTION;
-		SELECT PD.`id_Product`, SUB.`Nom_SubCategory` ,CAT.`Nom_Category` ,PD.`Descript_Product` ,PD.`Precio`,PD.`Stock`,PD.`Img`,PD.`_Status`
+		SELECT PD.`id_Product`,PD.Nombre_Product,PD.Marca_Product,PD.`Descript_Product`,PD.`Precio`,PD.`Stock`,PD.`Unidad`,PD.`Moneda`,SUB.`Nom_SubCategory`,CAT.`Nom_Category`,PD.`Img1`,PD.`Img2`,PD.`Img3`,PD.`Img4`,PD.`Img5`,PD.`NDescuento`,PD.`_Status`,DE.`dscto1`,DE.`dscto2`,DE.`dscto3`,DE.`dscto4`,CAR.`Caracteristicas_product`
 		FROM PRODUCTOS as PD
 		JOIN SUBCATEGORIAS as SUB
 		ON (PD.`id_SubCategory` = SUB.`id_SubCategory`)
 		JOIN CATEGORIA AS CAT
-		ON(SUB.`id_Category` = CAT.`id_Categoria`) WHERE PD.`id_Product` = id_produ;
+		ON(SUB.`id_Category` = CAT.`id_Categoria`)
+        JOIN DESCUENTO AS DE
+        ON(DE.id_Product = PD.id_Product)
+        JOIN caracteristicas AS CAR
+        ON(CAR.id_Product = PD.id_Product)
+        WHERE PD.`id_Product`=idproducto;
     COMMIT; 
 END;
-################DOS-SELECIONES###########
+
+DROP PROCEDURE IF EXISTS sp_SelectProdXSubCategory;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectProdXSubCategory
+(
+IN subcategory nvarchar(50)
+)
+sp:BEGIN
+	DECLARE _consultalike NVARCHAR(100) ;
+    DECLARE a INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA' as message;
+	END;
+    IF (LENGTH(subcategory) = 0 or subcategory = " ")
+    THEN
+		SELECT 'La subcategory del producto no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		SET _consultalike = CONCAT_WS(' ',subcategory);
+        SET a = (select count(*) from productos PRO JOIN SUBCATEGORIAS SUB ON(PRO.id_SubCategory = SUB.id_SubCategory)  WHERE SUB.Nom_SubCategory = _consultalike); 
+        IF (a>0)
+        THEN
+			SELECT PD.`id_Product`,PD.Nombre_Product,PD.Marca_Product,PD.`Descript_Product`,PD.`Precio`,PD.`Stock`,PD.`Unidad`,PD.`Moneda`,SUB.`Nom_SubCategory`,CAT.`Nom_Category`,PD.`Img1`,PD.`Img2`,PD.`Img3`,PD.`Img4`,PD.`Img5`,PD.`NDescuento`,PD.`_Status`,DE.`dscto1`,DE.`dscto2`,DE.`dscto3`,DE.`dscto4`
+			FROM PRODUCTOS as PD
+			JOIN SUBCATEGORIAS as SUB
+			ON (PD.`id_SubCategory` = SUB.`id_SubCategory`)
+			JOIN CATEGORIA AS CAT
+			ON(SUB.`id_Category` = CAT.`id_Categoria`)JOIN DESCUENTO AS DE
+			ON(DE.id_Product = PD.id_Product)
+            WHERE SUB.Nom_SubCategory = _consultalike
+			GROUP BY PD.Nombre_Product;
+		ELSEIF(a=0)THEN 
+			SELECT 'No encontrado registro de Productos de la SubCategoria' as message;
+        END IF;
+    COMMIT; 
+END;
+
+DROP PROCEDURE IF EXISTS sp_SelectProdXSubCategoryXPrecio;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectProdXSubCategoryXPrecio
+(
+IN subcategory nvarchar(50),
+IN precio decimal(7,2) 
+)
+sp:BEGIN
+	DECLARE _consultalike NVARCHAR(100) ;
+    DECLARE a INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA' as message;
+	END;
+    IF (LENGTH(subcategory) = 0 or subcategory = " ")
+    THEN
+		SELECT 'La subcategory del producto no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		SET _consultalike = CONCAT_WS(' ',subcategory);
+        SET a = (select count(*) from productos PRO JOIN SUBCATEGORIAS SUB ON(PRO.id_SubCategory = SUB.id_SubCategory)  WHERE SUB.Nom_SubCategory = _consultalike and PRO.Precio = precio); 
+        IF (a>0)
+        THEN
+			SELECT PD.`id_Product`,PD.Nombre_Product,PD.Marca_Product,PD.`Descript_Product`,PD.`Precio`,PD.`Stock`,PD.`Unidad`,PD.`Moneda`,SUB.`Nom_SubCategory`,CAT.`Nom_Category`,PD.`Img1`,PD.`Img2`,PD.`Img3`,PD.`Img4`,PD.`Img5`,PD.`NDescuento`,PD.`_Status`,DE.`dscto1`,DE.`dscto2`,DE.`dscto3`,DE.`dscto4`
+			FROM PRODUCTOS as PD
+			JOIN SUBCATEGORIAS as SUB
+			ON (PD.`id_SubCategory` = SUB.`id_SubCategory`)
+			JOIN CATEGORIA AS CAT
+			ON(SUB.`id_Category` = CAT.`id_Categoria`)JOIN DESCUENTO AS DE
+			ON(DE.id_Product = PD.id_Product)
+            WHERE SUB.Nom_SubCategory = _consultalike AND PD.Precio = precio
+			GROUP BY PD.Nombre_Product;
+		ELSEIF(a=0)THEN
+			SELECT PD.`id_Product`,PD.Nombre_Product,PD.Marca_Product,PD.`Descript_Product`,PD.`Precio`,PD.`Stock`,PD.`Unidad`,PD.`Moneda`,SUB.`Nom_SubCategory`,CAT.`Nom_Category`,PD.`Img1`,PD.`Img2`,PD.`Img3`,PD.`Img4`,PD.`Img5`,PD.`NDescuento`,PD.`_Status`,DE.`dscto1`,DE.`dscto2`,DE.`dscto3`,DE.`dscto4`
+			FROM PRODUCTOS as PD
+			JOIN SUBCATEGORIAS as SUB
+			ON (PD.`id_SubCategory` = SUB.`id_SubCategory`)
+			JOIN CATEGORIA AS CAT
+			ON(SUB.`id_Category` = CAT.`id_Categoria`)JOIN DESCUENTO AS DE
+			ON(DE.id_Product = PD.id_Product)
+            WHERE SUB.Nom_SubCategory = _consultalike 
+			GROUP BY PD.Nombre_Product;
+        END IF;
+    COMMIT; 
+END;
+
 DROP PROCEDURE IF EXISTS sp_SelectConsultaProd;
 DELIMITER $$
 CREATE PROCEDURE sp_SelectConsultaProd
 (
-IN consulta nvarchar(50)
+IN consulta nvarchar(500)
 )
 sp:BEGIN
-	DECLARE _consultalike NVARCHAR(100) ;
+	DECLARE _consultalike NVARCHAR(500) ;
+    DECLARE a INT;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
@@ -635,72 +816,52 @@ sp:BEGIN
     END IF;
  	START TRANSACTION;
 		SET _consultalike = CONCAT('%',consulta,'%');
-        
-		SELECT PD.`id_Product`, SUB.`Nom_SubCategory`,CAT.`Nom_Category`,PD.`Descript_Product`,PD.`Precio`,PD.`Stock`,PD.`Img`,PD.`_Status` 
-        FROM PRODUCTOS as PD
-        JOIN SUBCATEGORIAS as SUB
-        ON (PD.`id_SubCategory` = SUB.`id_SubCategory`)
-        JOIN CATEGORIA AS CAT
-        ON(SUB.`id_Category` = CAT.`id_Categoria`)
-        WHERE  CAT.`Nom_Category` like _consultalike or
-		SUB.`Nom_SubCategory` like _consultalike or
-        PD.`Descript_Product` like _consultalike or
-		PD.`_Status` like _consultalike
-        LIMIT 30;
+        SET a =(select count(*) from productos PRO JOIN SUBCATEGORIAS SUB ON(PRO.id_SubCategory = SUB.id_SubCategory) JOIN CATEGORIA CA ON(SUB.id_Category = CA.id_Categoria) WHERE CA.Nom_Category like _consultalike or SUB.Nom_SubCategory like _consultalike or PRO.Nombre_Product like _consultalike or PRO.Marca_Product like _consultalike or PRO.Descript_Product like _consultalike);
+        IF (a>0)
+        THEN
+			SELECT PD.`id_Product`,PD.Nombre_Product,PD.Marca_Product,PD.`Descript_Product`,PD.`Precio`,PD.`Stock`,PD.`Unidad`,PD.`Moneda`,SUB.`Nom_SubCategory`,CAT.`Nom_Category`,PD.`Img1`,PD.`Img2`,PD.`Img3`,PD.`Img4`,PD.`Img5`,PD.`NDescuento`,PD.`_Status`,DE.`dscto1`,DE.`dscto2`,DE.`dscto3`,DE.`dscto4`
+			FROM PRODUCTOS as PD
+			JOIN SUBCATEGORIAS as SUB
+			ON (PD.`id_SubCategory` = SUB.`id_SubCategory`)
+			JOIN CATEGORIA AS CAT 
+			ON(SUB.`id_Category` = CAT.`id_Categoria`)
+            JOIN DESCUENTO AS DE
+			ON(DE.id_Product = PD.id_Product)
+            WHERE CAT.Nom_Category like _consultalike OR
+			SUB.Nom_SubCategory like _consultalike OR
+			PD.Nombre_Product like _consultalike OR
+            PD.Marca_Product like _consultalike OR
+            PD.Descript_Product like _consultalike 
+            limit 30;
+		ELSEIF(a=0)THEN 
+			SELECT 'SIN SUGERENCIAS' as message;
+        END IF;
     COMMIT; 
 END;
 
-DROP PROCEDURE IF EXISTS sp_SelectWhereProducto;
-DELIMITER $$
-CREATE PROCEDURE sp_SelectWhereProducto
-(
-IN id_product int,
-IN consulta nvarchar(50)
-)
-sp:BEGIN
-	DECLARE _consultalike NVARCHAR(100) ;
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION
-	BEGIN
-		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA' as message;
-	END;
-    IF (id_product = 0 or id_product  is null)
-    THEN
-		SELECT 'EL id del producto no puede ser nula o cero.' as message;
-        LEAVE sp;
-    END IF;
-    IF (LENGTH(consulta) = 0 or consulta = " ")
-    THEN
-		SELECT 'La consulta del producto no puede ser nula o con valor en blanco.' as message;
-        LEAVE sp;
-    END IF;
- 	START TRANSACTION;
-		SET _consultalike = CONCAT('%',consulta,'%');
-        
-        SELECT PD.`id_Product`, SUB.`Nom_SubCategory`,CAT.`Nom_Category`,PD.`Descript_Product`,PD.`Precio`,PD.`Stock`,PD.`Img`,PD.`_Status` 
-        FROM PRODUCTOS as PD
-        JOIN SUBCATEGORIAS as SUB
-        ON (PD.`id_SubCategory` = SUB.`id_SubCategory`)
-        JOIN CATEGORIA AS CAT
-        ON(SUB.`id_Category` = CAT.`id_Categoria`)
-        WHERE PD.`id_Product` = id_product AND CAT.`Nom_Category` like _consultalike OR
-        PD.`id_Product` = id_product AND SUB.`Nom_SubCategory` like _consultalike OR
-        PD.`id_Product` = id_product AND PD.`Descript_Product` like _consultalike OR
-        PD.`id_Product` = id_product AND PD.`Status` like _consultalike
-        LIMIT 30;
-    COMMIT; 
-END;
+CALL sp_SelectProdXSubCategory('Laptops')
+CALL sp_SelectProdXSubCategoryXPrecio('Laptops',1899)
+call sp_SelectConsultaProd('HP 15.6" FHD, Ryzen 5-5500U, 8GB RAM, 256GB SSD, SPRUCE BLUE, Windows 11')
+CALL sp_SelectCiudadesXPais('Perú')
+select * from productos
+
+DROP VIEW IF EXISTS v_sCantidadProduct;
+CREATE VIEW v_sCantidadProduct
+AS
+	SELECT COUNT(*) CANTIDAD_PRODUCTOS FROM productos;
+    
 DROP VIEW IF EXISTS v_sSelectProducto;
 CREATE VIEW v_sSelectProducto
 AS
-	SELECT PD.`id_Product`, SUB.`Nom_SubCategory` AS SubCategoria ,CAT.`Nom_Category` AS Categoria ,PD.`Descript_Product` AS Descripcion ,PD.`Precio`,PD.`Stock`,PD.`Img`,PD.`_Status` as Estado 
+	SELECT PD.`id_Product`,PD.Nombre_Product,PD.Marca_Product,PD.`Descript_Product`,PD.`Precio`,PD.`Stock`,PD.`Unidad`,PD.`Moneda`,SUB.`Nom_SubCategory`,CAT.`Nom_Category`,PD.`Img1`,PD.`Img2`,PD.`Img3`,PD.`Img4`,PD.`Img5`,PD.`NDescuento`,PD.`_Status`,DE.`dscto1`,DE.`dscto2`,DE.`dscto3`,DE.`dscto4`
 	FROM PRODUCTOS as PD
 	JOIN SUBCATEGORIAS as SUB
 	ON (PD.`id_SubCategory` = SUB.`id_SubCategory`)
 	JOIN CATEGORIA AS CAT
 	ON(SUB.`id_Category` = CAT.`id_Categoria`)
+	JOIN DESCUENTO AS DE
+	ON(DE.id_Product = PD.id_Product)
     LIMIT 30;
-
 ############################################################ PAIS ################################################################################################
 DROP PROCEDURE IF EXISTS sp_InsertPais;
 DELIMITER $$
@@ -726,8 +887,8 @@ DROP PROCEDURE IF EXISTS sp_UpdatePais;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdatePais
 (
-IN id_Country int,
-IN nom_Pais NVARCHAR(100)
+IN idCountry int,
+IN nomCountry NVARCHAR(100)
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -735,18 +896,18 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE UPDATE UN PAIS' as message;
 	END;
-	IF (LENGTH(nom_Pais) = 0 or nom_Pais = " ")
+	IF (LENGTH(nomCountry) = 0 or nomCountry = " ")
     THEN
 		SELECT 'EL nombre del pais no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
 	END IF;
-    IF (id_Pai = 0 OR id_Pai is null)
+    IF (idCountry = 0 OR idCountry is null)
     THEN
 		SELECT 'EL id del pais no puede ser nula o igual a cero.' as message;
         LEAVE sp;
     END IF;
 	START TRANSACTION;
-		UPDATE pais SET Uk_Pais = nom_Pais WHERE id_Pais = id_Country;
+		UPDATE pais SET Uk_Pais = nomCountry WHERE id_Pais = idCountry;
     COMMIT; 
 END;
 
@@ -754,7 +915,7 @@ DROP PROCEDURE IF EXISTS sp_DeletePais;
 DELIMITER $$
 CREATE PROCEDURE sp_DeletePais
 (
-IN id_Country int
+IN Countryid int
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -762,56 +923,60 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE DELETE UN PAIS' as message;
 	END;
-    IF (id_Country = 0 OR id_Country is null)
+    IF (Countryid = 0 OR Countryid is null)
     THEN
 		SELECT 'EL id del pais no puede ser nula o igual a cero.' as message;
         LEAVE sp;
 	END IF;
+    IF (not exists(SELECT id_Pais FROM PAIS WHERE id_Pais= Countryid))
+    THEN
+		SELECT 'No existente Id Pais para el Delete.' as message;
+        LEAVE sp;
+	END IF;
     START TRANSACTION;
-		DELETE FROM Pais WHERE id_Pais = id_Country;
+		DELETE D from PAIS P JOIN CIUDAD C ON(C.id_Pais = P.id_Pais) JOIN DIRECCIONES D ON(D.id_Ciudad =C.id_Ciudad) WHERE P.`id_Pais` = Countryid;
+		DELETE C from PAIS P JOIN CIUDAD C ON(C.id_Pais = P.id_Pais) WHERE P.`id_Pais` = Countryid;
+		DELETE P from PAIS P WHERE P.`id_Pais` = Countryid;
 	COMMIT;
 END;
+set SQL_SAFE_UPDATES = 0;
 
-DROP PROCEDURE IF EXISTS sp_SelectWherePais;
+DROP PROCEDURE IF EXISTS sp_SelectPaisId;
 DELIMITER $$
-CREATE PROCEDURE sp_SelectWherePais
+CREATE PROCEDURE sp_SelectPaisId
 (
-IN id_Pais int,
-IN consulta nvarchar(100)
+IN paisid int
 )
 sp:BEGIN
-	DECLARE _consultalike NVARCHAR(100) ;
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE LISTAR PAIS' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECIONAR COUNTRY' as message;
 	END;
-    IF (id_Pais = 0 or id_Pais  is null)
+    IF (paisid = 0 or paisid is null)
     THEN
-		SELECT 'EL id del pais no puede ser nula o cero.' as message;
-        LEAVE sp;
-	END IF;
-	IF (LENGTH(consulta) = 0 or consulta = " " )
-    THEN
-		SELECT 'EL nombre del pais no puede ser nula o con valor en blanco.' as message;
+		SELECT 'EL id del country no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-	START TRANSACTION;
-		SET _consultalike = CONCAT('%',consulta,'%');
-		SELECT PS.`id_Pais` AS ID ,PS.`Uk_Pais` AS PAIS FROM PAIS AS PS WHERE PS.`id_Pais`=id_Pais AND PS.`Uk_Pais` like _consultalike;
-    COMMIT;
+ 	START TRANSACTION;
+        SELECT id_Pais,Uk_Pais FROM PAIS WHERE id_Pais = paisid;
+    COMMIT; 
 END;
+
+DROP VIEW IF EXISTS v_sCantidadCountry;
+CREATE VIEW v_sCantidadCountry
+AS SELECT COUNT(*) CANTIDAD_COUNTRY FROM pais;
+
 DROP VIEW IF EXISTS v_SelectPais;
-DELIMITER $$
 CREATE VIEW v_SelectPais
 AS
-	SELECT PS.id_Pais as ID ,PS.`Uk_Pais` as PAIS FROM PAIS AS PS
-############################################################CIUDAD############################################################################################
+	SELECT PS.id_Pais,PS.`Uk_Pais` FROM PAIS AS PS LIMIT 30;
+###########################################################CIUDAD############################################################################################
 DROP PROCEDURE IF EXISTS sp_InsertCiudad;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertCiudad
-(IN id_Pais int,
-IN nom_Ciudad NVARCHAR(100)
+(IN idPais int,
+IN nomCiudad NVARCHAR(100)
 )
 sp:BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -819,18 +984,18 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UN NUEVO CIUDAD' as message;
 	END;
-    IF ((id_Pais = 0 or id_Pais is null))
+    IF ((idPais = 0 or idPais is null))
      THEN 
      	SELECT 'EL id de la ciudad no puede ser nula o igual a cero.' as message;
         LEAVE sp;
 	END IF;  
-	IF (LENGTH(nom_Ciudad) = 0 or nom_Ciudad = " ")
+	IF (LENGTH(nomCiudad) = 0 or nomCiudad = " ")
     THEN
 		 SELECT 'EL nombre de la ciudad no puede ser nula o con valor en blanco.' as message;
          LEAVE sp;
 	END IF; 	
 	START TRANSACTION;
-		INSERT INTO CIUDAD (`id_Pais`,`Uk_Nombre`) VALUES (id_Pais,Uk_Nombre);
+		INSERT INTO CIUDAD (`id_Pais`,`Uk_Nombre`) VALUES (idPais,nomCiudad);
 	COMMIT;    	
 END;
 
@@ -838,9 +1003,9 @@ DROP PROCEDURE IF EXISTS sp_UpdateCiudad;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdateCiudad
 (
-IN id_Ciudad int,
-IN id_Pais int,
-IN nom_Ciudad NVARCHAR(100)
+IN idCiudad int,
+IN idPais int,
+IN nomCiudad NVARCHAR(100)
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -848,23 +1013,23 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE UPDATE UNA CIUDAD' as message;
 	END;
-	IF (LENGTH(id_Ciudad) = 0 or id_Ciudad = " ")
+	IF (LENGTH(idCiudad) = 0 or idCiudad = " ")
     THEN
 		SELECT 'EL id de la Ciudad no puede ser nula o cero.' as message;
         LEAVE sp;
 	END IF;
-	IF (LENGTH(id_Pais) = 0 or id_Pais = " ")
+	IF (LENGTH(idPais) = 0 or idPais = " ")
     THEN
 		SELECT 'EL id del Pais no puede ser nula o cero..' as message;
         LEAVE sp;
 	END IF;
-    IF (LENGTH(nom_Ciudad) = 0 or nom_Ciudad = " ")
+    IF (LENGTH(nomCiudad) = 0 or nomCiudad = " ")
     THEN
 		SELECT 'EL nombre de la ciudad no puede ser nula o con valor en blanco.'  as message;
         LEAVE sp;
 	END IF;
 	START TRANSACTION;
-		UPDATE CIUDAD SET id_Pais = id_Pais , Uk_Nombre = nom_Ciudad  WHERE id_Ciudad= id_Ciudad;
+		UPDATE CIUDAD SET id_Pais = idPais , Uk_Nombre = nomCiudad  WHERE id_Ciudad= idCiudad;
     COMMIT; 
 END;
 
@@ -872,7 +1037,7 @@ DROP PROCEDURE IF EXISTS sp_DeleteCiudad;
 DELIMITER $$
 CREATE PROCEDURE sp_DeleteCiudad
 (
-IN id_Ciudad int
+IN idCiudad int
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -880,63 +1045,241 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE DELETE UNA CIUDAD' as message;
 	END;
-    IF (id_Ciudad = 0 OR id_Ciudad is null)
+    IF (idCiudad = 0 OR idCiudad is null)
     THEN
 		SELECT 'EL id de la ciudad no puede ser nula o igual a cero.' as message;
         LEAVE sp;
 	END IF;
+     IF (not exists(SELECT id_Ciudad FROM CIUDAD WHERE id_Ciudad = idCiudad))
+    THEN
+		SELECT 'No existente id Ciudad para el Delete.' as message;
+        LEAVE sp;
+	END IF;
 	START TRANSACTION;
-		DELETE FROM CIUDAD WHERE `id_Ciudad` = id_Ciudad;
+		DELETE D from CIUDAD C JOIN DIRECCIONES D ON(D.id_Ciudad =C.id_Ciudad) WHERE C.`id_Ciudad` = idCiudad;
+		DELETE C from CIUDAD C WHERE C.`id_Ciudad` = idCiudad;
 	COMMIT;
 END;
+set SQL_SAFE_UPDATES = 0;
 
-DROP PROCEDURE IF EXISTS sp_SelectWhereCiud;
+DROP PROCEDURE IF EXISTS sp_SelectCiudadId;
 DELIMITER $$
-CREATE PROCEDURE sp_SelectWhereCiud
+CREATE PROCEDURE sp_SelectCiudadId
 (
-IN id_Ciudad int,
-IN consulta nvarchar(50)
+IN ciudadid int
 )
 sp:BEGIN
-
-	DECLARE _consultalike NVARCHAR(100) ;
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA SUBCATEGORIA' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECCIONAR UNA CIUDAD' as message;
 	END;
-    IF (id_Ciudad  = 0 or id_Ciudad is null)
+    IF (ciudadid= 0 or ciudadid  is null)
     THEN
-		SELECT 'EL id de la Subcategoria no puede ser nula o cero.' as message;
-        LEAVE sp;
-	END IF;
-    IF (LENGTH(consulta) = 0 or consulta = " ")
-    THEN
-		SELECT 'La consulta de la Subcategoria no puede ser nula o con valor en blanco.' as message;
+		SELECT 'EL id de la Ciudad no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		SET _consultalike = CONCAT('%',consulta,'%');
-        
-        SELECT CIU.id_Ciudad as ID ,PS.Uk_Pais AS PAIS,CIU.Uk_Nombre AS CIUDAD FROM Pais AS CIU
-        JOIN Pais AS PS
-        ON(CIU.id_Pais = PS.id_Pais)
-        WHERE CIU.id_Ciudad = id_Ciudad AND PS.Uk_Pais like _consultalike OR CIU.id_Ciudad = id_Ciudad AND  CIU.Uk_Nombre  like _consultalike;
-    COMMIT;
+        select C.id_Ciudad,P.Uk_Pais,C.Uk_Nombre
+        from ciudad C join pais P on(C.id_Pais = P.id_Pais) WHERE id_Ciudad = ciudadid;
+    COMMIT; 
 END;
+
+DROP VIEW IF EXISTS v_sCantidadCity;
+CREATE VIEW v_sCantidadCity
+AS SELECT COUNT(*) CANTIDAD_CITY FROM ciudad;
 
 DROP VIEW IF EXISTS v_sSelectCiudad;
 CREATE VIEW v_sSelectCiudad
 AS
-	SELECT CIU.`id_Ciudad` as ID ,PS.`Uk_Pais` AS PAIS,CIU.`Uk_Nombre` AS CIUDAD FROM CIUDAD AS CIU JOIN PAIS AS PS ON(CIU.`id_Pais` = PS.`id_Pais`) LIMIT 30
+	SELECT CIU.`id_Ciudad`,PS.`Uk_Pais`,CIU.`Uk_Nombre` FROM CIUDAD AS CIU JOIN PAIS AS PS ON(CIU.`id_Pais` = PS.`id_Pais`) LIMIT 30
+    
+DROP PROCEDURE IF EXISTS sp_SelectCiudadesXPais;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectCiudadesXPais
+(
+IN NombreCountry nvarchar(100)
+)
+sp:BEGIN
+	DECLARE _consultalike NVARCHAR(100) ;
+    DECLARE a INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA' as message;
+	END;
+    IF (LENGTH(NombreCountry) = 0 or NombreCountry = " ")
+    THEN
+		SELECT 'El Nombre del country no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		SET _consultalike = CONCAT_WS(' ',NombreCountry);
+        SET a = ( select count(*) from ciudad CI JOIN pais P ON(CI.id_Pais = P.id_Pais) WHERE P.Uk_Pais = _consultalike);
+        IF (a>0)
+        THEN
+			SELECT CI.id_Ciudad,CI.Uk_Nombre FROM 
+            ciudad CI JOIN pais P ON(CI.id_Pais = P.id_Pais) WHERE P.Uk_Pais =  _consultalike
+			GROUP BY CI.Uk_Nombre;
+		ELSEIF(a=0)THEN 
+			SELECT 'No encontrado registro de Ciudades del Country' as message;
+        END IF;
+    COMMIT; 
+END;
+###############################################CLIENTE###############################################################################
+DROP PROCEDURE IF EXISTS sp_InsertCliente;
+DELIMITER $$
+CREATE PROCEDURE sp_InsertCliente
+(
+IN Nombre_Cliente nvarchar(250),
+IN Apellido_Cliente nvarchar(250),
+IN Edad_Cliente smallint,
+IN Correo nvarchar(250),
+IN Contacto char(20),
+IN Img nvarchar(250) 
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR CLIENTE' as message;
+	END;
+    IF (LENGTH(Nombre_Cliente) = 0 or Nombre_Cliente= " ")
+    THEN
+		SELECT 'El nombre del cliente no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+     IF (LENGTH(Apellido_Cliente) = 0 or Apellido_Cliente= " ")
+    THEN
+		SELECT 'El apellido del cliente no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (Edad_Cliente= 0 or Edad_Cliente is null)
+    THEN
+		SELECT 'La edad del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(Contacto) = 0 or Contacto= " ")
+    THEN
+		SELECT 'El contacto no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		INSERT INTO CLIENTE(`Nombre_Cliente`,`Apellido_Cliente`,`Edad_Cliente`,`Correo`,`Contacto`,`Img`) VALUES (Nombre_Cliente,Apellido_Cliente,Edad_Cliente,Correo,Contacto,Img);
+    COMMIT; 
+END;
+
+DROP PROCEDURE IF EXISTS sp_UpdateCliente;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdateCliente
+(
+IN idCliente int,
+IN NombreCliente nvarchar(250),
+IN ApellidoCliente nvarchar(250),
+IN EdadCliente smallint,
+IN Correo nvarchar(250),
+IN Contacto char(20),
+IN Img nvarchar(250) 
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR CLIENTE' as message;
+	END;
+    IF (idCliente= 0 or idCliente is null)
+    THEN
+		SELECT 'EL id del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(NombreCliente) = 0 or NombreCliente= " ")
+    THEN
+		SELECT 'El nombre del cliente no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+     IF (LENGTH(ApellidoCliente) = 0 or ApellidoCliente= " ")
+    THEN
+		SELECT 'El apellido del cliente no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (EdadCliente= 0 or EdadCliente is null)
+    THEN
+		SELECT 'La edad del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(Contacto) = 0 or Contacto= " ")
+    THEN
+		SELECT 'El contacto no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+	END IF;
+ 	START TRANSACTION;
+		UPDATE CLIENTE SET `Nombre_Cliente`=NombreCliente,`Apellido_Cliente`=ApellidoCliente,`Edad_Cliente`= EdadCliente,`Correo`= Correo,`Contacto`= Contacto,`Img` = Img WHERE `id_Cliente` = idCliente;
+    COMMIT;
+END;
+
+DROP PROCEDURE IF EXISTS sp_DeleteCliente;
+DELIMITER $$
+CREATE PROCEDURE sp_DeleteCliente
+(
+IN idCliente int
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR CLIENTE' as message;
+	END;
+    IF (idCliente= 0 or idCliente is null)
+    THEN
+		SELECT 'El id del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+	START TRANSACTION;
+			DELETE S FROM CLIENTE C JOIN PEDIDO P ON(P.id_Cliente= C.id_Cliente) JOIN CARRITOCOMPRA S ON(S.N_Pedido = P.N_Pedido) WHERE C.id_Cliente = idCliente;
+			DELETE P FROM CLIENTE C JOIN PEDIDO P ON(P.id_Cliente= C.id_Cliente) WHERE C.id_Cliente = idCliente;
+			DELETE M FROM CLIENTE C JOIN MEDIOPAGO M ON(M.id_Cliente= C.id_Cliente) WHERE C.id_Cliente = idCliente;
+			DELETE U FROM CLIENTE C JOIN USER_ U ON(U.id_Cliente = C.id_Cliente) WHERE C.id_Cliente = idCliente;
+			DELETE D FROM CLIENTE C JOIN DIRECCIONES D ON(D.id_Cliente = C.id_Cliente) WHERE C.id_Cliente = idCliente;
+			DELETE C FROM CLIENTE C WHERE C.id_Cliente = idCliente;
+	COMMIT;
+END;
+set SQL_SAFE_UPDATES = 0;
+
+DROP PROCEDURE IF EXISTS sp_SelectClientsId;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectClientsId
+(
+IN idCliente int
+)
+sp:BEGIN
+    IF (idCliente = 0 or idCliente is null)
+    THEN
+		SELECT 'EL id del cliente no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+        SELECT CL.`id_Cliente`,CL.`Nombre_Cliente`,CL.`Apellido_Cliente`,CL.`Edad_Cliente`,CL.`Correo`,CL.`Contacto`,CL.`Img`
+        FROM CLIENTE AS CL
+        WHERE CL.`id_Cliente` = idCliente;
+    COMMIT; 
+END;
+
+DROP VIEW IF EXISTS v_sCantidadClients;
+CREATE VIEW v_sCantidadClients
+AS SELECT COUNT(*) CANTIDAD_CLIENTE FROM cliente;
+
+DROP VIEW IF EXISTS v_sSelectCliente;
+CREATE VIEW v_sSelectCliente
+AS
+	SELECT CL.`id_Cliente`,CL.`Nombre_Cliente`,CL.`Apellido_Cliente`,CL.`Edad_Cliente`,CL.`Correo`,CL.`Contacto`,CL.Img FROM CLIENTE AS CL	LIMIT 30	
 #################################################################### DIRECCIONES ############################################################################
 DROP PROCEDURE IF EXISTS sp_InsertDireccion;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertDireccion
 (
-IN id_Cliente int,
+IN idCliente int,
 IN Direccion nvarchar(50),
-IN id_Ciudad int
+IN idCiudad int
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -944,7 +1287,7 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UNA NUEVA DIRECCIÓN' as message;
 	END;
-	IF (id_Cliente = 0 or id_Cliente is null)
+	IF (idCliente = 0 or idCliente is null)
     THEN
 		SELECT 'El id del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
@@ -954,37 +1297,24 @@ sp:BEGIN
 		SELECT 'La direccion no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
-    IF (id_Ciudad = 0 or id_Ciudad is null)
+    IF (idCiudad = 0 or idCiudad is null)
     THEN
 		SELECT 'El id de la ciudad no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-    IF ((NOT EXISTS(SELECT `id_Cliente` FROM CLIENTE WHERE  `id_Cliente` = id_Cliente )))
-    THEN
-		SELECT 'El cliente no existente para el registro.' as message;
-        LEAVE sp;
-    END IF;
-    IF((NOT EXISTS(SELECT `id_Ciudad` FROM  CIUDAD WHERE  `id_Ciudad` = id_Ciudad )))
-    THEN
-		SELECT 'La ciudad no existente para el registro.' as message;
-        LEAVE sp;
-    END IF;
  	START TRANSACTION;
-		INSERT INTO DIRECCIONES (`id_Cliente`,`Direccion`,`id_Ciudad`) VALUES (id_Cliente,Direccion,id_Ciudad);
+		INSERT INTO DIRECCIONES (`id_Cliente`,`Direccion`,`id_Ciudad`) VALUES (idCliente,Direccion,idCiudad);
     COMMIT; 
 END;
 
-select * from categoria
-select * from subcategorias
-INSERT INTO subcategorias(`id_Category`,`Nom_SubCategory`) VALUES (5,'Ropa');
 DROP PROCEDURE IF EXISTS sp_UpdateDireccion;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdateDireccion
 (
-IN id_Direc int,
-IN id_Cliente int,
+IN idDirec int,
+IN idCliente int,
 IN Direccion nvarchar(50),
-IN id_Ciudad int
+IN idCiudad int
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -992,12 +1322,12 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE UPDATE LA DIRECCIÓN' as message;
 	END;
-    IF (id_Direc = 0 or id_Direc is null)
+    IF (idDirec = 0 or idDirec is null)
     THEN
 		SELECT 'El id de la direccion no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-	IF (id_Cliente = 0 or id_Cliente is null)
+	IF (idCliente = 0 or idCliente is null)
     THEN
 		SELECT 'El id del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
@@ -1007,86 +1337,81 @@ sp:BEGIN
 		SELECT 'La direccion no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
-    IF (id_Ciudad = 0 or id_Ciudad is null)
+    IF (idCiudad = 0 or idCiudad is null)
     THEN
 		SELECT 'El id de la ciudad no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		UPDATE DIRECCIONES SET `id_Cliente` = id_Cliente ,`Direccion` = Direccion ,`id_Ciudad` = id_Ciudad  WHERE `id_Direct` = id_Direc; 
+		UPDATE DIRECCIONES SET `id_Cliente` = idCliente ,`Direccion` = Direccion ,`id_Ciudad` = idCiudad  WHERE `id_Direct` = idDirec; 
     COMMIT; 
 END;
-
+select * from direcciones
+CALL sp_UpdateDireccion()
 DROP PROCEDURE IF EXISTS sp_DeleteDireccion;
 DELIMITER $$
 CREATE PROCEDURE sp_DeleteDireccion
 (
-IN id_Direct int
+IN idDirect int
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR UNA DIRECCION' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DELETE UNA DIRECCION' as message;
 	END;
-    IF (id_Direct = 0 or id_Direct is null)
+    IF (idDirect = 0 or idDirect is null)
     THEN
 		SELECT 'EL id de la direccion no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
+    IF (not exists(SELECT id_Direct FROM direcciones WHERE id_Direct = idDirect))
+    THEN
+		SELECT 'No existente id Direccion para el Delete.' as message;
+        LEAVE sp;
+	END IF;
  	START TRANSACTION;
-		DELETE FROM DIRECCIONES WHERE `id_Direct` = id_Direct ;
+		DELETE FROM DIRECCIONES WHERE `id_Direct` = idDirect ;
     COMMIT; 
 END;
+set SQL_SAFE_UPDATES = 0;
+CALL sp_DeleteDireccion()
 
-DROP PROCEDURE IF EXISTS sp_SelectWhereDireccion;
+DROP PROCEDURE IF EXISTS sp_SelectDireccionId;
 DELIMITER $$
-CREATE PROCEDURE sp_SelectWhereDireccion
+CREATE PROCEDURE sp_SelectDireccionId
 (
-IN id_Direct int,
-IN consulta nvarchar(50)
+IN idDirect int
 )
 sp:BEGIN
-
-	DECLARE _consultalike NVARCHAR(100) ;
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECCIONAR DIRECCION' as message;
 	END;
-    IF (id_Direct = 0 or id_Direct is null)
+    IF (idDirect = 0 or idDirect is null)
     THEN
 		SELECT 'EL id del producto no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-    IF (LENGTH(consulta) = 0 or consulta = " ")
-    THEN
-		SELECT 'La consulta de la direccion no puede ser nula o con valor en blanco.' as message;
-        LEAVE sp;
-    END IF;
  	START TRANSACTION;
-		SET _consultalike = CONCAT('%',consulta,'%');
-        
-        SELECT DIR.`id_Direct` AS ID, CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) AS CLIENTE,DIR.`Direccion` AS DIRECCION,CIU.`Uk_Nombre` AS CIUDAD,PS.`Uk_Pais` AS PAIS 
-        FROM DIRECCIONES as DIR
-        JOIN CLIENTE as CLI
-        ON (DIR.`id_Cliente` = CLI.`id_Cliente`)
-        JOIN CIUDAD AS CIU
-        ON(DIR.`id_Ciudad` = CIU.`id_Ciudad`)
-        JOIN PAIS AS PS
-        ON(CIU.id_Pais  = PS.`id_Pais`)
-        WHERE DIR.`id_Direct` = id_Direct AND CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) like _consultalike OR
-        PD.`id_Direct` = id_Direct AND CIU.`Uk_Nombre` like _consultalike OR
-        PD.`id_Direct` = id_Direct AND PS.`Uk_Pais` like _consultalike OR
-        PD.`id_Direct` = id_Direct AND DIR.`Direccion` like _consultalike
-        LIMIT 30;
-        
+        SELECT DIR.`id_Direct`,CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) AS Cliente,DIR.`Direccion`,CIU.`Uk_Nombre`,PS.`Uk_Pais` 
+		FROM DIRECCIONES as DIR
+		JOIN CLIENTE as CLI
+		ON (DIR.`id_Cliente` = CLI.`id_Cliente`)
+		JOIN CIUDAD AS CIU
+		ON(DIR.`id_Ciudad` = CIU.`id_Ciudad`)
+		JOIN PAIS AS PS
+		ON(CIU.id_Pais  = PS.`id_Pais`)
+        WHERE DIR.`id_Direct` = idDirect ;
     COMMIT; 
 END;
+CALL sp_SelectDireccionId(2)
+
 DROP VIEW IF EXISTS v_sSelectDireccion;
 CREATE VIEW v_sSelectDireccion
 AS
-	SELECT DIR.`id_Direct` AS ID, CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) AS CLIENTE,DIR.`Direccion` AS DIRECCION,CIU.`Uk_Nombre` AS CIUDAD,PS.`Uk_Pais` AS PAIS 
+	SELECT DIR.`id_Direct`,CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) AS Cliente,DIR.`Direccion`,CIU.`Uk_Nombre` Ciudad,PS.`Uk_Pais` Pais
 	FROM DIRECCIONES as DIR
 	JOIN CLIENTE as CLI
 	ON (DIR.`id_Cliente` = CLI.`id_Cliente`)
@@ -1095,12 +1420,20 @@ AS
 	JOIN PAIS AS PS
 	ON(CIU.id_Pais  = PS.`id_Pais`)
     LIMIT 30;
-################################################################### ROL ##############################################################################
+SELECT * FROM v_sSelectDireccion
+
+DROP VIEW IF EXISTS v_sCantidadDireccion;
+CREATE VIEW v_sCantidadDireccion
+AS SELECT COUNT(*) CANTIDAD_DIRECCION FROM direcciones;
+SELECT * FROM v_sCantidadDireccion
+###################################################################ROL##############################################################################
+
 DROP PROCEDURE IF EXISTS sp_InsertRoll;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertRoll
 (
-IN Descript_Roll nvarchar(50)
+IN DescriptRoll nvarchar(50),
+IN Value_ char(6)
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -1108,23 +1441,28 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UN NUEVO ROL' as message;
 	END;
-    IF (LENGTH(Descript_Roll) = 0 or Descript_Roll= " ")
+    IF (LENGTH(DescriptRoll) = 0 or DescriptRoll= " ")
     THEN
 		SELECT 'La descripcion no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
+    IF (LENGTH(Value_) = 0 or Value_= " ")
+    THEN
+		SELECT 'El Valor no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
  	START TRANSACTION;
-		INSERT INTO ROLL (`Descript_Roll`) VALUES (Descript_Roll);
+		INSERT INTO ROLL (`Descript_Roll`,`_Value`) VALUES (DescriptRoll,Value_);
     COMMIT; 
 END;
-CALL sp_InsertRoll ('User')
-select * from Roll
+
 DROP PROCEDURE IF EXISTS sp_UpdateRoll;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdateRoll
 (
-IN id_Roll int,
-IN Descript_Roll nvarchar(50)
+IN idRoll int,
+IN DescriptRoll nvarchar(50),
+IN Value_ char(6)
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -1132,18 +1470,23 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE UPDATE EL ROLL' as message;
 	END;
-    IF (id_Roll = 0 or id_Roll is null)
+    IF (idRoll = 0 or idRoll is null)
     THEN
 		SELECT 'El id del rol no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-    IF (LENGTH(Descript_Roll) = 0 or Descript_Roll=" ")
+    IF (LENGTH(DescriptRoll) = 0 or DescriptRoll=" ")
     THEN
 		SELECT 'La descripcion no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
+    IF (LENGTH(Value_) = 0 or Value_= " ")
+    THEN
+		SELECT 'El Valor no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
  	START TRANSACTION;
-		UPDATE ROLL SET `Descript_Roll` = Descript_Roll  WHERE `id_Roll` = id_Roll; 
+		UPDATE ROLL SET `Descript_Roll` = DescriptRoll,`_Value` = Value_  WHERE `id_Roll` = idRoll; 
     COMMIT; 
 END;
 
@@ -1151,7 +1494,7 @@ DROP PROCEDURE IF EXISTS sp_DeleteRoll;
 DELIMITER $$
 CREATE PROCEDURE sp_DeleteRoll
 (
-IN id_Roll int
+IN idRoll int
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -1159,59 +1502,51 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR UN ROL' as message;
 	END;
-    IF (id_Roll = 0 or id_Roll is null)
+    IF (idRoll = 0 or idRoll is null)
     THEN
 		SELECT 'EL id del rol no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
- 	START TRANSACTION;
-		DELETE FROM ROLL WHERE `id_Roll` = id_Roll ;
-    COMMIT; 
+    IF (not exists(SELECT id_Roll FROM ROLL WHERE id_Roll = idRoll))
+    THEN
+		SELECT 'No existente id Roll.' as message;
+        LEAVE sp;
+	END IF;
+	START TRANSACTION;
+		DELETE U FROM ROLL R JOIN USER_ U ON(U.id_Roll = R.id_Roll) WHERE R.id_Roll = idRoll;
+		DELETE R FROM ROLL R WHERE R.`id_Roll` = idRoll;
+	COMMIT; 
 END;
+set SQL_SAFE_UPDATES = 0;
 
-DROP PROCEDURE IF EXISTS sp_SelectWhereRoll;
+DROP PROCEDURE IF EXISTS sp_SelectWhereRollId;
 DELIMITER $$
-CREATE PROCEDURE sp_SelectWhereRoll
+CREATE PROCEDURE sp_SelectWhereRollId
 (
-IN id_Roll int,
-IN consulta nvarchar(50)
+IN idRoll int
 )
 sp:BEGIN
-	DECLARE _consultalike NVARCHAR(100) ;
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECCIONAR ROL' as message;
 	END;
-    IF (id_Roll = 0 or id_Roll is null)
+    IF (idRoll = 0 or idRoll is null)
     THEN
 		SELECT 'EL id del roll no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-    IF (LENGTH(consulta) = 0 or consulta = " ")
-    THEN
-		SELECT 'La consulta deL roll no puede ser nula o con valor en blanco.' as message;
-        LEAVE sp;
-    END IF;
  	START TRANSACTION;
-		SET _consultalike = CONCAT('%',consulta,'%');
-        
-        SELECT RL.id_Roll,RL.Descript_Roll
+        SELECT RL.id_Roll,RL.Descript_Roll,RL._Value
         FROM ROLL as RL
-        WHERE RL.`id_Roll` = id_Roll AND RL.`Descript_Roll` like _consultalike 
-        LIMIT 30;
+        WHERE RL.`id_Roll` = idRoll;
     COMMIT;     
 END;
 
 DROP VIEW IF EXISTS v_sSelectRoll;
 CREATE VIEW v_sSelectRoll
-AS
-	 SELECT RL.id_Roll,RL.Descript_Roll FROM ROLL as RL LIMIT 30;
-     
-SELECT * FROM v_sSelectRoll;	
+AS SELECT RL.id_Roll,RL.Descript_Roll,RL._Value FROM ROLL as RL LIMIT 30;
 ####################################################################USER###################################################################
-
-INSERT INTO ROLL(Descript_Roll)VALUES("Usuario")
 DROP PROCEDURE IF EXISTS sp_InsertUser;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertUser
@@ -1249,15 +1584,17 @@ sp:BEGIN
 		SELECT 'El password no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
-    IF ((_Status < 0 or _Status > 1) or _Status is null)
+    IF (_Status < 0 or _Status is null)
     THEN
 		SET _Status = 0;
+        SELECT 'El Status del User no puede ser nula o menor a cero.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
 		INSERT INTO USER_ (`id_Cliente`,`id_Roll`,`_Username`,`_Password`,`_Status`) VALUES (idCliente,idRoll,Username,_Password,_Status);
     COMMIT; 
 END;
+
 DROP PROCEDURE IF EXISTS sp_UpdateUser;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdateUser
@@ -1310,14 +1647,20 @@ sp:BEGIN
 		SELECT 'El id del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
+	IF (not exists(SELECT id_Cliente FROM User_ WHERE id_Cliente =  idCliente))
+    THEN
+		SELECT 'No existente id User para el Delete.' as message;
+        LEAVE sp;
+	END IF;
  	START TRANSACTION;
 		DELETE FROM USER_ WHERE `id_Cliente` = idCliente;
     COMMIT; 
 END;
+set SQL_SAFE_UPDATES = 0;
 
-DROP PROCEDURE IF EXISTS sp_SelectIdCliente;
+DROP PROCEDURE IF EXISTS sp_SelectUserId;
 DELIMITER $$
-CREATE PROCEDURE sp_SelectIdCliente
+CREATE PROCEDURE sp_SelectUserId
 (
 IN idCliente int
 )
@@ -1325,7 +1668,7 @@ sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA USER' as message;
 	END;
     IF (idCliente = 0 or idCliente is null)
     THEN
@@ -1343,41 +1686,6 @@ sp:BEGIN
     COMMIT; 
 END;
 
-DROP PROCEDURE IF EXISTS sp_SelectWhereUser;
-DELIMITER $$
-CREATE PROCEDURE sp_SelectWhereUser
-(
-IN consulta nvarchar(50)
-)
-sp:BEGIN
-	DECLARE _consultalike NVARCHAR(100) ;
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION
-	BEGIN
-		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR LA BUSQUEDA' as message;
-	END;
-    IF (LENGTH(consulta) = 0 or consulta = " ")
-    THEN
-		SELECT 'La consulta del producto no puede ser nula o con valor en blanco.' as message;
-        LEAVE sp;
-    END IF;
- 	START TRANSACTION;
-		SET _consultalike = CONCAT('%',consulta,'%');
-        
-        SELECT CLI.Nombre_Cliente,CLI.Apellido_Cliente,RL.Descript_Roll AS ROLL,US._Username,US._Password,US._Status
-		FROM USER_ as US
-		JOIN CLIENTE as CLI
-		ON (US.`id_Cliente` = CLI.`id_Cliente`)
-		JOIN ROLL AS RL
-		ON(US.`id_Cliente`= RL.`id_Roll`)
-        WHERE  CLI.Nombre_Cliente like _consultalike OR
-												CLI.Apellido_Cliente like _consultalike OR
-												RL.`Descript_Roll` like _consultalike OR
-												US.`_Username` like _Username OR
-												US.`_Status` like _consultalike LIMIT 30;
-    COMMIT; 
-END;
-
 DROP VIEW IF EXISTS v_sSelectUser;
 CREATE VIEW v_sSelectuser
 AS
@@ -1388,17 +1696,16 @@ AS
 	JOIN ROLL AS RL
 	ON(US.`id_Cliente`= RL.`id_Roll`)
     LIMIT 30;
-select * from v_sSelectUser
-DELETE FROM USER_ WHERE id_Cliente= 1
-
-
 ##############################################################MEDIODEPAGO###############################################################
 DROP PROCEDURE IF EXISTS sp_InsertMedioPago;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertMedioPago
 (
-IN id_Cliente int,
-IN MedioPago nvarchar(250)
+IN idCliente int,
+IN MedioPago nvarchar(250),
+IN NumeroTarjeta char(50),
+IN CVV char(3),
+IN FechaVencimiento date
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -1406,7 +1713,7 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR UN MEDIO DE PAGO' as message;
 	END;
-    IF (id_Cliente = 0 or id_Cliente is null)
+    IF (idCliente = 0 or idCliente is null)
     THEN
 		SELECT 'El id del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
@@ -1416,8 +1723,18 @@ sp:BEGIN
 		SELECT 'El medio de pago no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
+    IF (LENGTH(NumeroTarjeta) = 0 or NumeroTarjeta= " ")
+    THEN
+		SELECT 'El numero de tarjeta no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(CVV) = 0 or CVV = " ")
+    THEN
+		SELECT 'El CVV no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
  	START TRANSACTION;
-		INSERT INTO MEDIOPAGO (`id_Cliente`,`MedioPago`) VALUES (id_Cliente,MedioPago);
+		INSERT INTO MEDIOPAGO (`id_Cliente`,`MedioPago`,`NumeroTarjeta`,`CVV`,`FechaVencimiento`) VALUES (idCliente,MedioPago,NumeroTarjeta,CVV,FechaVencimiento);
     COMMIT; 
 END;
 
@@ -1425,9 +1742,11 @@ DROP PROCEDURE IF EXISTS sp_UpdateMedioPago;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdateMedioPago
 (
-IN id_MedioPago int,
-IN id_Cliente int,
-IN MedioPago nvarchar(250)
+IN idMedioPago int,
+IN MedioPago nvarchar(250),
+IN NumeroTarjeta char(50),
+IN CVV char(3),
+IN FechaVencimiento date
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -1435,14 +1754,9 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR EL PEDIO DE PAGO' as message;
 	END;
-    IF (id_MedioPago= 0 or id_MedioPago is null)
+    IF (idMedioPago= 0 or idMedioPago is null)
     THEN
 		SELECT 'El id del medio de pago no puede ser nula o cero.' as message;
-        LEAVE sp;
-    END IF;
-    IF (id_Cliente = 0 or id_Cliente is null)
-    THEN
-		SELECT 'El id del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
     IF (LENGTH(MedioPago) = 0 or MedioPago= " ")
@@ -1450,17 +1764,26 @@ sp:BEGIN
 		SELECT 'El medio de pago no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
+    IF (LENGTH(NumeroTarjeta) = 0 or NumeroTarjeta= " ")
+    THEN
+		SELECT 'El numero de tarjeta no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(CVV) = 0 or CVV = " ")
+    THEN
+		SELECT 'El CVV no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
  	START TRANSACTION;
-		UPDATE MEDIOPAGO SET `id_Cliente` = id_Cliente,`MedioPago`= MedioPago WHERE `id_MedioPago` = d_MedioPago;
+		UPDATE MEDIOPAGO SET `MedioPago` = MedioPago,`NumeroTarjeta`=NumeroTarjeta,`CVV` = CVV,`FechaVencimiento`=FechaVencimiento  WHERE `id_MedioPago` = idMedioPago;
     COMMIT;
 END;
-
 
 DROP PROCEDURE IF EXISTS sp_DeleteMedioPago;
 DELIMITER $$
 CREATE PROCEDURE sp_DeleteMedioPago
 (
-IN id_MedioPago int
+IN idMedioPago int
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -1468,234 +1791,930 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR MEDIO DE PAGO' as message;
 	END;
-    IF (id_MedioPago= 0 or id_MedioPago is null)
+    IF (idMedioPago= 0 or idMedioPago is null)
     THEN
 		SELECT 'El id del medio de pago no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
+    IF (not exists(SELECT id_MedioPago FROM mediopago WHERE id_MedioPago =  idMedioPago))
+    THEN
+		SELECT 'No existente id MedioPago para el Delete.' as message;
+        LEAVE sp;
+	END IF;
  	START TRANSACTION;
-		DELETE FROM MEDIOPAGO WHERE `id_MedioPago` = id_MedioPago ;
+		DELETE FROM MEDIOPAGO WHERE `id_MedioPago` = idMedioPago ;
     COMMIT; 
 END;
+set SQL_SAFE_UPDATES = 0;
 
-DROP PROCEDURE IF EXISTS sp_SelectWhereMedioPago;
+DROP PROCEDURE IF EXISTS sp_SelectMedioPagoId;
 DELIMITER $$
-CREATE PROCEDURE sp_SelectWhereMedioPago
+CREATE PROCEDURE sp_SelectMedioPagoId
 (
-IN id_MedioPago int,
-IN consulta nvarchar(50)
+IN pagoid int
 )
 sp:BEGIN
-
-	DECLARE _consultalike NVARCHAR(100) ;
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR UNA BUSQUEDA' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE BUSCAR' as message;
 	END;
-    IF (id_MedioPago = 0 or id_MedioPago is null)
+    IF (pagoid= 0 or pagoid  is null)
     THEN
-		SELECT 'EL id de la Subcategoria no puede ser nula o cero.' as message;
-        LEAVE sp;
-    END IF;
-    IF (LENGTH(consulta) = 0 or consulta = " ")
-    THEN
-		SELECT 'La consulta del medio de pago no puede ser nula o con valor en blanco.' as message;
+		SELECT 'EL id del mediopago no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		SET _consultalike = CONCAT('%',consulta,'%');
-        
-        SELECT MP.`id_MedioPago` AS ID, CONCAT_WS(' ',CL.Nombre_Cliente,CL.Apellido_Cliente) AS CLIENTE ,MP.`MedioPago` AS MEDIOPAGO FROM MEDIOPAGO AS MP
-        JOIN CLIENTE AS CL
-        ON(MP.`id_Cliente` = CL.`id_Cliente`)
-        WHERE MP.`id_MedioPago` = id_MedioPago AND CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) like _consultalike OR 
-        MP.`id_MedioPago` = id_MedioPago AND  `MedioPago` like _consultalike;
+        SELECT M.id_MedioPago,CONCAT_WS(' ',C.Nombre_Cliente,C.Apellido_Cliente) AS Cliente,M.MedioPago,M.NumeroTarjeta,M.CVV,M.FechaVencimiento
+        FROM mediopago M JOIN cliente C on(M.id_Cliente = C.id_Cliente)
+        where M.id_MedioPago = pagoid;
     COMMIT; 
 END;
 
 DROP VIEW IF EXISTS v_sSelectMedioPago;
 CREATE VIEW v_sSelectMedioPago
 AS
-		SELECT MP.`id_MedioPago` AS ID, CONCAT_WS(' ',CL.Nombre_Cliente,CL.Apellido_Cliente) AS CLIENTE ,MP.`MedioPago` AS MEDIOPAGO FROM MEDIOPAGO AS MP
-		JOIN CLIENTE AS CL
-        ON(MP.`id_Cliente` = CL.`id_Cliente`)
-
-###############################################CLIENTE###############################################################################
-DROP PROCEDURE IF EXISTS sp_InsertCliente;
+		 SELECT M.id_MedioPago,CONCAT_WS(' ',C.Nombre_Cliente,C.Apellido_Cliente) AS Cliente,M.MedioPago,M.NumeroTarjeta,M.CVV,M.FechaVencimiento
+        FROM mediopago M JOIN cliente C on(M.id_Cliente = C.id_Cliente) LIMIT 30;
+#################################################PEDIDO#################################################################
+DROP PROCEDURE IF EXISTS sp_InsertPedido;
 DELIMITER $$
-CREATE PROCEDURE sp_InsertCliente
+CREATE PROCEDURE sp_InsertPedido
 (
-IN Nombre_Cliente nvarchar(250),
-IN Apellido_Cliente nvarchar(250),
-IN Edad_Cliente smallint,
-IN Correo nvarchar(250),
-IN Contacto char(20)
+IN idCliente smallint,
+IN NPedido smallint,
+IN FeEmision date,
+IN EmpEnvio nvarchar(100),
+IN SubTotal decimal(7,2),
+IN Descuento decimal(7,2),
+IN DiretEnvio nvarchar(100),
+IN Total smallint,
+IN TotalPagar decimal(7,2),
+IN Statu bool
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR CLIENTE' as message;
-	END;
-    IF (LENGTH(Nombre_Cliente) = 0 or Nombre_Cliente= " ")
-    THEN
-		SELECT 'El nombre del cliente no puede ser nula o con valor en blanco.' as message;
-        LEAVE sp;
-    END IF;
-     IF (LENGTH(Apellido_Cliente) = 0 or Apellido_Cliente= " ")
-    THEN
-		SELECT 'El apellido del cliente no puede ser nula o con valor en blanco.' as message;
-        LEAVE sp;
-    END IF;
-    IF (Edad_Cliente= 0 or Edad_Cliente is null)
-    THEN
-		SELECT 'La edad del cliente no puede ser nula o cero.' as message;
-        LEAVE sp;
-    END IF;
-    IF (LENGTH(Contacto) = 0 or Contacto= " ")
-    THEN
-		SELECT 'El contacto no puede ser nula o con valor en blanco.' as message;
-        LEAVE sp;
-    END IF;
- 	START TRANSACTION;
-		INSERT INTO CLIENTE(`Nombre_Cliente`,`Apellido_Cliente`,`Edad_Cliente`,`Correo`,`Contacto`) VALUES (Nombre_Cliente,Apellido_Cliente,Edad_Cliente,Correo,Contacto );
-    COMMIT; 
-END;
-
-DROP PROCEDURE IF EXISTS sp_UpdateCliente;
-DELIMITER $$
-CREATE PROCEDURE sp_UpdateCliente
-(
-IN idCliente int,
-IN NombreCliente nvarchar(250),
-IN ApellidoCliente nvarchar(250),
-IN EdadCliente smallint,
-IN Correo nvarchar(250),
-IN Contacto char(20)
-)
-sp:BEGIN
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION
-	BEGIN
-		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR CLIENTE' as message;
-	END;
-    IF (idCliente= 0 or idCliente is null)
-    THEN
-		SELECT 'EL id del cliente no puede ser nula o cero.' as message;
-        LEAVE sp;
-    END IF;
-    IF (LENGTH(NombreCliente) = 0 or NombreCliente= " ")
-    THEN
-		SELECT 'El nombre del cliente no puede ser nula o con valor en blanco.' as message;
-        LEAVE sp;
-    END IF;
-     IF (LENGTH(ApellidoCliente) = 0 or ApellidoCliente= " ")
-    THEN
-		SELECT 'El apellido del cliente no puede ser nula o con valor en blanco.' as message;
-        LEAVE sp;
-    END IF;
-    IF (EdadCliente= 0 or EdadCliente is null)
-    THEN
-		SELECT 'La edad del cliente no puede ser nula o cero.' as message;
-        LEAVE sp;
-    END IF;
-    IF (LENGTH(Contacto) = 0 or Contacto= " ")
-    THEN
-		SELECT 'El contacto no puede ser nula o con valor en blanco.' as message;
-        LEAVE sp;
-	END IF;
- 	START TRANSACTION;
-		UPDATE CLIENTE SET `Nombre_Cliente`=NombreCliente,`Apellido_Cliente`=ApellidoCliente,`Edad_Cliente`= EdadCliente,`Correo`= Correo,`Contacto`= Contacto WHERE `id_Cliente` = idCliente;
-    COMMIT;
-END;
-
-DROP PROCEDURE IF EXISTS sp_DeleteCliente;
-DELIMITER $$
-CREATE PROCEDURE sp_DeleteCliente
-(
-IN idCliente int
-)
-sp:BEGIN
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION
-	BEGIN
-		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR CLIENTE' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INSERTAR PEDIDO' as message;
 	END;
     IF (idCliente= 0 or idCliente is null)
     THEN
 		SELECT 'El id del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
- 	START TRANSACTION;
-		DELETE FROM CLIENTE WHERE `id_Cliente` = idCliente;
-    COMMIT; 
-END;
-
-DROP PROCEDURE IF EXISTS sp_SelectClientsId;
-DELIMITER $$
-CREATE PROCEDURE sp_SelectClientsId
-(
-IN idCliente int
-)
-sp:BEGIN
-    IF (idCliente = 0 or idCliente is null)
+    IF  (char_length(FeEmision )=0 or isnull(FeEmision))
     THEN
-		SELECT 'EL id del cliente no puede ser nula o cero.' as message;
+		SELECT 'La fecha de Emision no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
+    IF (LENGTH(EmpEnvio) = 0 or EmpEnvio= " ")
+    THEN
+		SELECT 'La empresa no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (SubTotal = 0 or SubTotal is null)
+    THEN
+		SELECT 'El subtotal no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(DiretEnvio) = 0 or DiretEnvio= " ")
+    THEN
+		SELECT 'La direccion no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (Total= 0 or Total is null)
+    THEN
+		SELECT 'El total no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (TotalPagar= 0 or TotalPagar is null)
+    THEN
+		SELECT 'El total a pagar no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (NPedido = 0 or NPedido is null)
+    THEN
+		SELECT 'El pedido no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+	END IF;
+	IF (Statu< 0 or Statu is null)
+    THEN
+		SET Statu = 0;
+        LEAVE sp;
+    END IF;
+    IF (Descuento= 0 or Descuento is null)
+    THEN
+		SELECT 'El descuento no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (exists(SELECT N_Pedido FROM pedido WHERE N_Pedido =  NPedido))
+    THEN
+		SELECT 'Existente NPedido.' as message;
+        LEAVE sp;
+	END IF;
  	START TRANSACTION;
-        SELECT CL.`id_Cliente`,CL.`Nombre_Cliente`,CL.`Apellido_Cliente`,CL.`Edad_Cliente`,CL.`Correo`,CL.`Contacto`
-        FROM CLIENTE AS CL
-        WHERE CL.`id_Cliente` = idCliente;
-			
+		INSERT INTO PEDIDO(id_Cliente,N_Pedido,FechaEmision,Emp_Envio,Sub_Total,Descuento,Diret_Envio,Total,TotalPagar,_Status)VALUES(idCliente,NPedido,FeEmision,EmpEnvio,SubTotal,Descuento,DiretEnvio,Total,TotalPagar,Statu);
     COMMIT; 
 END;
-
-DROP PROCEDURE IF EXISTS sp_SelectWhereCliente;
+sdsdsdasd
+CALL sp_InsertPedido(1,1,'2022-01-31','EmpresaOlx',2399,12,'Calle Palmeras 123',1,2397,1)
+select * from pedido
+select * from cliente
+DROP PROCEDURE IF EXISTS sp_UpdatePedido;
 DELIMITER $$
-CREATE PROCEDURE sp_SelectWhereCliente
+CREATE PROCEDURE sp_UpdatePedido
 (
-IN idCliente int,
-IN consulta nvarchar(50)
+IN NPedido smallint,
+IN FeEmision date,
+IN EmpEnvio nvarchar(100),
+IN SubTotal decimal(7,2),
+IN Descuento decimal(7,2),
+IN DiretEnvio nvarchar(100),
+IN Total smallint,
+IN TotalPagar decimal(7,2),
+IN Statu bool
 )
 sp:BEGIN
-
-	DECLARE _consultalike NVARCHAR(100) ;
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE REALIZAR UNA BUSQUEDA' as message;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR EL PEDIDO' as message;
 	END;
-    IF (idCliente = 0 or idCliente is null)
+ 	START TRANSACTION;
+		UPDATE pedido SET `FechaEmision` = FeEmision,`Emp_Envio`= EmpEnvio,`Sub_Total` = SubTotal,`Descuento`=Descuento,`Diret_Envio` = DiretEnvio,`Total` = Total ,`TotalPagar` = TotalPagar,`_Status` = Statu WHERE `N_Pedido` = NPedido;
+    COMMIT;
+END;
+CALL sp_UpdatePedido(5,'2022-01-31','EmpresaOlx',2399,12,'Calle Palmeras 123',1,2397,1)
+SELECT * FROM PRODI
+DROP PROCEDURE IF EXISTS sp_DeletePedido;
+DELIMITER $$
+CREATE PROCEDURE sp_DeletePedido
+(
+IN NPedido smallint
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR PEDIDO' as message;
+	END;
+    IF (NPedido= 0 or NPedido is null)
     THEN
-		SELECT 'EL id del cliente no puede ser nula o cero.' as message;
+		SELECT 'El N_Pedido no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-    IF (LENGTH(consulta) = 0 or consulta = " ")
+    IF (not exists(SELECT id_Cliente FROM pedido WHERE N_Pedido = NPedido))
     THEN
-		SELECT 'La consulta del medio de pago no puede ser nula o con valor en blanco.' as message;
+		SELECT 'No existente N_Pedido.' as message;
+        LEAVE sp;
+	END IF;
+ 	START TRANSACTION;
+		DELETE C FROM pedido P JOIN carritocompra C on(C.N_Pedido = P.N_Pedido) WHERE P.N_Pedido = NPedido;
+		DELETE P FROM pedido P WHERE P.N_Pedido = NPedido;
+    COMMIT; 
+END;
+set SQL_SAFE_UPDATES = 0;
+
+DROP PROCEDURE IF EXISTS sp_SelectPedidoId;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectPedidoId
+(
+IN NPedido smallint
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE BUSCAR' as message;
+	END;
+    IF (NPedido= 0 or NPedido is null)
+    THEN
+		SELECT 'EL NPedido no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		SET _consultalike = CONCAT('%',consulta,'%');
-        
-        SELECT CL.`id_Cliente`,CL.`Nombre_Cliente`,CL.`Apellido_Cliente`,CL`Edad_Cliente`,CL`Correo`,CL`Contacto`
-        FROM CLIENTE AS CL
-        WHERE CL.`id_Cliente` = idCliente AND CL.`Nombre_Cliente` like _consultalike OR 
-			CL.`id_Cliente` = idCliente AND  CL.`Apel_Usernamelido_Cliente` like _consultalike OR 
-			CL.`id_Cliente` = idCliente AND  CL.`Correo` like _consultalike OR 
-			CL.`id_Cliente` = idCliente AND  CL.`Contacto` like _consultalike;
+        SELECT CONCAT_WS(' ',C.Nombre_Cliente,C.Apellido_Cliente) AS Cliente,P.N_Pedido,P.FechaEmision,P.Emp_Envio,P.Sub_Total,P.Descuento,P.Diret_Envio,P.Total,P.TotalPagar,P._Status
+        FROM PEDIDO P JOIN CLIENTE C ON(P.id_Cliente = C.id_Cliente)
+        where P.N_Pedido = NPedido;
     COMMIT; 
 END;
 
-DROP VIEW IF EXISTS v_sSelectCliente;
-CREATE VIEW v_sSelectCliente
+DROP VIEW IF EXISTS v_sSelectPedido;
+CREATE VIEW v_sSelectPedido
 AS
-	SELECT CL.`id_Cliente`,CL.`Nombre_Cliente`,CL.`Apellido_Cliente`,CL.`Edad_Cliente`,CL.`Correo`,CL.`Contacto` FROM CLIENTE AS CL		
+		SELECT CONCAT_WS(' ',C.Nombre_Cliente,C.Apellido_Cliente) AS Cliente,P.N_Pedido,P.FechaEmision,P.Sub_Total,P.Total,P.TotalPagar,P.Emp_Envio,P.Diret_Envio,P._Status
+        FROM PEDIDO P JOIN CLIENTE C ON(P.id_Cliente = C.id_Cliente)  LIMIT 30
+################################################################CARRITOCOMPRA############################################
+DROP PROCEDURE IF EXISTS sp_InsertCarritoCompra;
+DELIMITER $$
+CREATE PROCEDURE sp_InsertCarritoCompra
+(
+IN NPedido smallint,
+IN idProduct int,
+IN CarCantidad smallint
+)
+sp:BEGIN
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INGRESAR AL CARRITO DE COMPRA' as message;
+	END;
+    IF (NPedido = 0 or NPedido is null)
+    THEN
+		SELECT 'El NPedido no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (idProduct = 0 or idProduct is null)
+    THEN
+		SELECT 'El id del producto no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (CarCantidad = 0 or CarCantidad is null)
+    THEN
+		SELECT 'La Cantidad del CarritoCompra no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		INSERT INTO CARRITOCOMPRA(N_Pedido,id_Product,Car_Cantidad)VALUES(NPedido,idProduct,CarCantidad);
+    COMMIT; 
+END;
 
-SELECT * FROM v_sSelectCliente
+DROP PROCEDURE IF EXISTS sp_UpdateCarritoCompra;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdateCarritoCompra
+(
+IN idProduct int,
+IN CarCantidad smallint
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR EL CARRITO DE COMPRA' as message;
+	END;
+    IF (idProduct = 0 or idProduct is null)
+    THEN
+		SELECT 'El id del producto no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (CarCantidad = 0 or CarCantidad is null)
+    THEN
+		SELECT 'La cantidad no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		UPDATE carritocompra SET `Car_Cantidad` = CarCantidad WHERE `id_Product` = idProduct;
+    COMMIT;
+END;
+
+DROP PROCEDURE IF EXISTS sp_DeleteCarritoCompra;
+DELIMITER $$
+CREATE PROCEDURE sp_DeleteCarritoCompra
+(
+IN idProduct int
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR CARRITO DE COMPRA' as message;
+	END;
+    IF (idProduct= 0 or idProduct is null)
+    THEN
+		SELECT 'El id del producto no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (not exists(SELECT id_Product FROM carritocompra WHERE id_Product =  idProduct))
+    THEN
+		SELECT 'No existente id producto del carrito de compra.' as message;
+        LEAVE sp;
+	END IF;
+ 	START TRANSACTION;
+		DELETE FROM carritocompra WHERE `id_Product` = idProduct;
+    COMMIT; 
+END;
+set SQL_SAFE_UPDATES = 0;
+
+DROP PROCEDURE IF EXISTS sp_SelectCarritoCompraId;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectCarritoCompraId
+(
+IN idproduct int
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE BUSCAR' as message;
+	END;
+    IF (idproduct= 0 or idproduct  is null)
+    THEN
+		SELECT 'EL id del producto del carrito de compra no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+        SELECT P.Nombre_Product,P.Marca_Product,P.Descript_Product,P.Img1,P.Precio,P.NDescuento,P.Stock,D.dscto1,D.dscto2,D.dscto3,D.dscto4
+        FROM CARRITOCOMPRA C JOIN PRODUCTOS P ON(C.id_Product = P.id_Product) join descuento as D
+        on(P.id_Product=D.id_Product)
+        where C.id_Product = idproduct;
+    COMMIT; 
+END;
+
+DROP VIEW IF EXISTS v_sSelectCarritoCompra;
+CREATE VIEW v_sSelectCarritoCompra
+AS
+SELECT * FROM CARRITOCOMPRA
+SELECT * FROM PRODUCTOS
+SELECT * FROM PEDIDO
+		SELECT P.Nombre_Product,P.Marca_Product,P.Descript_Product,P.Img1,P.Precio,C.Car_Cantidad
+        FROM CARRITOCOMPRA C JOIN PRODUCTOS P ON(C.id_Product = P.id_Product) LIMIT 30;
+        
+DROP PROCEDURE IF EXISTS v_sSelectCarritoCompra;
+DELIMITER $$
+CREATE PROCEDURE v_sSelectCarritoCompra
+()
+sp:BEGIN
+    DECLARE a INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECCIONAR' as message;
+	END;
+ 	START TRANSACTION;
+        SET a = (select count(*) from CARRITOCOMPRA); 
+        IF (a>0)
+        THEN
+			SELECT P.Nombre_Product,P.Marca_Product,P.Descript_Product,P.Img1,P.Precio,P.NDescuento,P.Stock,D.dscto1,D.dscto2,D.dscto3,D.dscto4
+			FROM CARRITOCOMPRA C JOIN PRODUCTOS P ON(C.id_Product = P.id_Product) join descuento as D
+			on(P.id_Product=D.id_Product);
+		ELSEIF(a=0)THEN 
+			SELECT 'No contiene producto' as message;
+        END IF;
+    COMMIT; 
+END;
+#################################historialdepago###############################################################
+DROP PROCEDURE IF EXISTS sp_InsertHistorialCompra
+DELIMITER $$
+CREATE PROCEDURE sp_InsertHistorialCompra
+(
+IN NPedido smallint,
+IN Cliente nvarchar(100),
+IN FeEmision date,
+IN DirecEnvio nvarchar(100),
+IN SubTotal smallint,
+IN Total smallint,
+IN TotalPagar smallint,
+IN Descuento float
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INSERTAR HISTORIAL PEDIDO' as message;
+	END;
+    IF (exists(SELECT N_Pedido FROM historialcompra  WHERE N_Pedido =  NPedido))
+    THEN
+		SELECT 'Existente N_PEDIDO.' as message;
+        LEAVE sp;
+	END IF;
+ 	START TRANSACTION;
+		INSERT INTO historialcompra(N_Pedido,Cliente,FechaEmision,DirecEnvio,SubTotal,Total,TotalPagar,Descuento)VALUES(NPedido,Cliente,FeEmision,DirecEnvio,SubTotal,Total,TotalPagar,Descuento);
+    COMMIT; 
+END;
+CALL sp_InsertHistorialCompra(1,'Torres Miguel','2022-06-04','DirecEnvio',10000,1,,10)
+select * from historialcompra
+select * from pedido
+CALL sp_InsertPedido(1,1,'2022-01-31','EmpresaOlx',2399,1.199,'Calle Palmeras 123',1,1.200,1)
+DROP PROCEDURE IF EXISTS sp_UpdateHistorialCompra;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdateHistorialCompra
+(
+IN NPedido smallint,
+IN Cliente nvarchar(100),
+IN Fecha date,
+IN Dir nvarchar(100),
+IN SuT smallint,
+IN Totl smallint,
+IN TotP smallint,
+IN Descuent float
+
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR EL HISTORIAL PEDIDO' as message;
+	END;
+ 	START TRANSACTION;
+		UPDATE historialcompra SET Cliente = Cliente,FechaEmision=Fecha,DirecEnvio= Dir,SubTotal=SuT,Total=Totl,TotalPagar=TotP,Descuento=Descuent WHERE N_Pedido = NPedido;
+    COMMIT;
+END;
+set SQL_SAFE_UPDATES = 0;
+
+DROP PROCEDURE IF EXISTS sp_DeleteHistorial;
+DELIMITER $$
+CREATE PROCEDURE sp_DeleteHistorial
+(
+IN NPedido smallint
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR HISTORIAL PEDIDO' as message;
+	END;
+    IF (NPedido= 0 or NPedido is null)
+    THEN
+		SELECT 'El NPedido no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (not exists(SELECT N_Pedido FROM historialcompra WHERE N_Pedido =  NPedido))
+    THEN
+		SELECT 'No existente id N_PEDIDO.' as message;
+        LEAVE sp;
+	END IF;
+ 	START TRANSACTION;
+		DELETE FROM historialcompra WHERE N_Pedido = NPedido;
+    COMMIT; 
+END;
+set SQL_SAFE_UPDATES = 0;
 
 
+DROP PROCEDURE IF EXISTS sp_SelectHistorialId;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectHistorialId
+(
+IN NPedido int
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECCIONAR HISTORIAL' as message;
+	END;
+    IF (NPedido= 0 or NPedido  is null)
+    THEN
+		SELECT 'EL NPedido no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		SELECT H.N_Pedido,H.Cliente,H.FechaEmision,H.DirecEnvio,H.SubTotal,H.Total,H.TotalPagar
+        FROM HISTORIALCOMPRA H
+        where H.N_Pedido = NPedido;
+    COMMIT; 
+END;
+call sp_SelectHistorialId(1)
+
+
+DROP VIEW IF EXISTS v_sSelectHistorial;
+CREATE VIEW v_sSelectHistorial
+AS
+		SELECT H.N_Pedido,H.Cliente,H.FechaEmision,H.DirecEnvio,H.SubTotal,H.Total,H.TotalPagar
+        FROM HISTORIALCOMPRA H LIMIT 30
+SELECT * FROM v_sSelectHistorial
+#######################################
+SELECT * FROM DESCUENTO
+SELECT * FROM CARACTERISTICAS
+
+DROP PROCEDURE IF EXISTS sp_InsertDescuento
+DELIMITER $$
+CREATE PROCEDURE sp_InsertDescuento
+(
+IN idProduct smallint,
+IN dscto1 float,
+IN dscto2 float,
+IN dscto3 float,
+IN dscto4 float
+
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INSERTAR DESCUENTO' as message;
+	END;
+    IF (idProduct= 0 or idProduct is null)
+    THEN
+		SELECT 'El id del producto del descuento no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (dscto1= 0 or dscto1 is null)
+    THEN
+		SELECT 'El dscto1 del descuento no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (dscto2= 0 or dscto2 is null)
+    THEN
+		SELECT 'El dscto2 del descuento no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (dscto3= 0 or dscto3 is null)
+    THEN
+		SELECT 'El dscto3 del descuento no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (dscto4= 0 or dscto4 is null)
+    THEN
+		SELECT 'El dscto4 del descuento no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (exists(SELECT id_Product FROM descuento  WHERE id_Product = idProduct))
+    THEN
+		SELECT '  Descuento Existente del Producto.' as message;
+        LEAVE sp;
+	END IF;
+ 	START TRANSACTION;
+		INSERT INTO descuento(id_Product,dscto1,dscto2,dscto3,dscto4)VALUES(idProduct,dscto1,dscto2,dscto3,dscto4);
+    COMMIT; 
+END;
+CALL sp_InsertDescuento(3,30,30,30,30)
+select * from descuento
+CALL sp_InsertHistorialCompra(1,'Torres Miguel','2022-06-04','DirecEnvio',10000,2,11800,10)
+select * from historialcompra
+DROP PROCEDURE IF EXISTS sp_UpdateDescuento;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdateDescuento
+(
+IN idProduct smallint,
+IN dscto1 float,
+IN dscto2 float,
+IN dscto3 float,
+IN dscto4 float
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR EL DESCUENTO' as message;
+	END;
+     IF (idProduct= 0 or idProduct is null)
+    THEN
+		SELECT 'El id del producto de descuento no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (dscto1= 0 or dscto1 is null)
+    THEN
+		SELECT 'El dscto1 del descuento no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (dscto2= 0 or dscto2 is null)
+    THEN
+		SELECT 'El dscto2 del descuento no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (dscto3= 0 or dscto3 is null)
+    THEN
+		SELECT 'El dscto3 del descuento no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (dscto4= 0 or dscto4 is null)
+    THEN
+		SELECT 'El dscto4 del descuento no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		UPDATE descuento SET dscto1=dscto1 ,dscto2=dscto2 ,dscto3=dscto3,dscto4=dscto4  WHERE id_Product = idProduct ;
+    COMMIT;
+END;
+call sp_UpdateDescuento(3,50,40,50,60)
+select * from descuento
+
+https://definicion.de/descuento/
+DROP PROCEDURE IF EXISTS sp_DeleteDescuento;
+DELIMITER $$
+CREATE PROCEDURE sp_DeleteDescuento
+(
+IN idProduct smallint
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR DESCUENTO' as message;
+	END;
+    IF (idProduct = 0 or idProduct  is null)
+    THEN
+		SELECT 'El id del producto de descuento no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (not exists(SELECT id_Product FROM DESCUENTO WHERE id_Product =  idProduct))
+    THEN
+		SELECT 'No existente IdProducto delc Descuento.' as message;
+        LEAVE sp;
+	END IF;
+ 	START TRANSACTION;
+		DELETE FROM DESCUENTO WHERE id_Product = idProduct;
+    COMMIT; 
+END;
+set SQL_SAFE_UPDATES = 0;
+SELECT * FROM DESCUENTO
+CALL sp_DeleteDescuento(3)
+SELECT * FROM CARACTERISTICAS
+
+DROP PROCEDURE IF EXISTS sp_SelectDescuentoId;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectDescuentoId
+(
+IN idProduct int
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECCIONAR DESCUENTO' as message;
+	END;
+    IF (idProduct = 0 or idProduct  is null)
+    THEN
+		SELECT 'El id del producto de descuento no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		SELECT P.id_Product,P.Nombre_Product,P.Marca_Product,S.Nom_SubCategory,CA.Nom_Category,D.dscto1,D.dscto2,D.dscto3,D.dscto4
+        FROM DESCUENTO D JOIN 
+        PRODUCTOS P ON(P.id_Product =D.id_Product) JOIN SUBCATEGORIAS S
+        ON(S.id_SubCategory = P.id_SubCategory) JOIN CATEGORIA CA
+        ON(CA.id_Categoria = S.id_Category)
+        where D.id_Product = idProduct;
+    COMMIT; 
+END;
+call sp_SelectHistorialId(1)
+CALL sp_SelectDescuentoId(1)
+SELECT * FROM PRODUCTOS
+SELECT * FROM DESCUENTO
+SELECT * FROM SUBCATEGORIAS
+SELECT * FROM CATEGORIA
+
+DROP VIEW IF EXISTS v_sSelectDescuento;
+CREATE VIEW v_sSelectDescuento
+AS
+		SELECT P.id_Product,P.Nombre_Product,P.Marca_Product,S.Nom_SubCategory,CA.Nom_Category,D.dscto1,D.dscto2,D.dscto3,D.dscto4
+        FROM DESCUENTO D JOIN 
+        PRODUCTOS P ON(P.id_Product =D.id_Product) JOIN SUBCATEGORIAS S
+        ON(S.id_SubCategory = P.id_SubCategory) JOIN CATEGORIA CA
+        ON(CA.id_Categoria = S.id_Category)LIMIT 30
+SELECT * FROM v_sSelectDescuento
+
+#CARACTERISTICAS
+select * from caracteristicas
+
+DROP PROCEDURE IF EXISTS sp_InsertCaracteristicas
+DELIMITER $$
+CREATE PROCEDURE sp_InsertCaracteristicas
+(
+IN idProduct smallint,
+IN Caracteristicas nvarchar(1500)
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INSERTAR CARACTERISTICAS' as message;
+	END;
+    IF (idProduct= 0 or idProduct is null)
+    THEN
+		SELECT 'El id del producto de la caracteristicas no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(Caracteristicas) = 0 or Caracteristicas= " ")
+    THEN
+		SELECT 'La caracteristicas no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (exists(SELECT id_Product FROM caracteristicas WHERE id_Product = idProduct))
+    THEN
+		SELECT 'Caracteristicas Existente del Producto.' as message;
+        LEAVE sp;
+	END IF;
+ 	START TRANSACTION;
+		INSERT INTO caracteristicas(id_Product,Caracteristicas_product)VALUES(idProduct,Caracteristicas);
+    COMMIT; 
+END;
+CALL sp_InsertCaracteristicas(3,'Windows 11 with 6-core AMD Ryzen 5 5500U ProcessorFast charge laptop computer for school or home')
+select * from caracteristicas
+CALL sp_InsertDescuento(3,30,30,30,30)
+select * from descuento
+CALL sp_InsertHistorialCompra(1,'Torres Miguel','2022-06-04','DirecEnvio',10000,2,11800,10)
+select * from historialcompra
+DROP PROCEDURE IF EXISTS sp_UpdateCaracteristicas;
+DELIMITER $$
+CREATE PROCEDURE sp_UpdateCaracteristicas
+(
+IN idProduct smallint,
+IN Caracteristicas nvarchar(1500)
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR LA CARACTERISTICASS' as message;
+	END;
+    IF (idProduct= 0 or idProduct is null)
+    THEN
+		SELECT 'El id del producto de la caracteristicas no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (LENGTH(Caracteristicas) = 0 or Caracteristicas= " ")
+    THEN
+		SELECT 'La caracteristicas no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		UPDATE caracteristicas SET Caracteristicas_product=Caracteristicas  WHERE id_Product = idProduct ;
+    COMMIT;
+END;
+call sp_UpdateCaracteristicas(1,'DSDSDS')
+select * from descuento
+
+https://definicion.de/descuento/
+DROP PROCEDURE IF EXISTS sp_DeleteCaracteristicas;
+DELIMITER $$
+CREATE PROCEDURE sp_DeleteCaracteristicas
+(
+IN idProduct smallint
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR CARACTERISTICAS' as message;
+	END;
+    IF (idProduct = 0 or idProduct  is null)
+    THEN
+		SELECT 'El id del producto de la caracteristicas no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+    IF (not exists(SELECT id_Product FROM caracteristicas WHERE id_Product =  idProduct))
+    THEN
+		SELECT 'No existente IdProducto de la Caracteristicas.' as message;
+        LEAVE sp;
+	END IF;
+ 	START TRANSACTION;
+		DELETE FROM caracteristicas WHERE id_Product = idProduct;
+    COMMIT; 
+END;
+set SQL_SAFE_UPDATES = 0;
+select * from caracteristicas
+CALL sp_DeleteCaracteristicas(3)
+SELECT * FROM DESCUENTO
+CALL sp_DeleteDescuento(3)
+SELECT * FROM CARACTERISTICAS
+
+DROP PROCEDURE IF EXISTS sp_SelectCaracteristicasId;
+DELIMITER $$
+CREATE PROCEDURE sp_SelectCaracteristicasId
+(
+IN idProduct int
+)
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECCIONAR CARACTERISTICAS' as message;
+	END;
+    IF (idProduct = 0 or idProduct  is null)
+    THEN
+		SELECT 'El id del producto de la caracteristicas no puede ser nula o cero.' as message;
+        LEAVE sp;
+    END IF;
+ 	START TRANSACTION;
+		SELECT P.id_Product,P.Nombre_Product,P.Marca_Product,S.Nom_SubCategory,CA.Nom_Category,C.Caracteristicas_product
+        FROM CARACTERISTICAS C JOIN 
+        PRODUCTOS P ON(P.id_Product =C.id_Product) JOIN SUBCATEGORIAS S
+        ON(S.id_SubCategory = P.id_SubCategory) JOIN CATEGORIA CA
+        ON(CA.id_Categoria = S.id_Category)
+        where C.id_Product = idProduct;
+    COMMIT; 
+END;
+set SQL_SAFE_UPDATES = 0;
+CALL sp_SelectCaracteristicasId(1)
+call sp_SelectHistorialId(1)
+CALL sp_SelectDescuentoId(1)
+SELECT * FROM PRODUCTOS
+SELECT * FROM DESCUENTO
+SELECT * FROM SUBCATEGORIAS
+SELECT * FROM CATEGORIA
+
+DROP VIEW IF EXISTS v_sSelectCaracteristicas;
+CREATE VIEW v_sSelectCaracteristicas
+AS
+		SELECT P.id_Product,P.Nombre_Product,P.Marca_Product,S.Nom_SubCategory,CA.Nom_Category,C.Caracteristicas_product
+        FROM CARACTERISTICAS C JOIN 
+        PRODUCTOS P ON(P.id_Product =C.id_Product) JOIN SUBCATEGORIAS S
+        ON(S.id_SubCategory = P.id_SubCategory) JOIN CATEGORIA CA
+        ON(CA.id_Categoria = S.id_Category)LIMIT 30
+SELECT * FROM v_sSelectCaracteristicas
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CALL sp_InsertCategoria('television')
+CALL sp_InsertSubCategoria(1,'Electromestico')
+CALL sp_InsertProductos('Licuadora','Bord',1,'una de las Mejores de la Industria',5000,100,'licuadora.png',1)
+CALL sp_InsertPais('Perú')
+CALL sp_InsertCiudad(1,'Lima') /// cliente 2
+CALL sp_InsertCliente('Oscar Juan','Torres Mallqui',30,'torres123@hotmail.com',984564216,'imagen.png')
+CALL sp_InsertDireccion(1,'Carabayllo 123',1)
+CALL sp_InsertRoll ('Usuario')
+CALL sp_InsertUser(1,1,'miguel123','123456Mx',1)
+CALL sp_InsertMedioPago(1,"Tarjeta")
+CALL sp_InsertPedido(1,1,'2021-06-04','Emp_Envio',10000,'Diret_Envio',2,11800,1)
+CALL sp_InsertCarritoCompra(1,1,1,1800,0,11800)
+CALL sp_InsertHistorialCompra(1,'Torres Miguel','2022-06-04','DirecEnvio',10000,2,11800)
+
+drop procedure if exists sp_CantidadDeRegistros;
+create procedure sp_CantidadDeRegistros()
+
+	SELECT COUNT(PRO.id_Product) CANTIDAD_PRODUCTOS,COUNT(SUB.id_SubCategory) CANTIDAD_SUBCATEGORY
+    FROM productos AS PRO JOIN SUBCATEGORIAS SUB
+    ON(PRO.id_SubCategory = SUB.id_SubCategory);
+	SELECT COUNT(*) CANTIDAD_CATEGORIAS FROM categoria ;
+
+SELECT * FROM PRODUCTOS
+SELECT * FROM SUBCATEGORIAS
+call sp_CantidadDeRegistros;
+
+
+DROP PROCEDURE IF EXISTS sp_CantidadDeRegistros;
+DELIMITER $$
+CREATE PROCEDURE sp_CantidadDeRegistros()
+sp:BEGIN
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECCIONAR CANTIDAD PRODUCTOS' as message;
+	END;
+ 	START TRANSACTION;
+		SELECT COUNT(*) CANTIDAD_PRODUCTOS, FROM productos;
+    COMMIT; 
+END;
+
+call sp_CantidadDeRegistros();
+
+
+
+CALL sp_InsertProductos('mochila','Adidas',2,'Buena Marca',250,100,'1imagen.png','2imagen.png','3imagen.png',1)
+
+
+#https://www.linio.com.pe/c/portatiles/laptops?price=1000-37539
+
+#https://www.coolbox.pe/radiosfsfssfsfsddffsfsfsfdsf?_q=radiosfsfssfsfsddffsfsfsfdsf&map=ft
+
+
+
+
+CALL sp_InsertCategoria('Computación')
+CALL sp_InsertCategoria('ElectroHogar')
+CALL sp_InsertCategoria('Moda Mujer')
+CALL sp_InsertCategoria('Moda Hombre')
+CALL sp_InsertSubCategoria(1,'Tablets')
+CALL sp_InsertSubCategoria(1,'Laptops')
+CALL sp_InsertSubCategoria(4,'Poleras')
+CALL sp_InsertProductos('Laptop Huawei MateBook D15 15.6 FHD IPS i5-10210U 512GB SSD 8GB RAM Windows Home + Antivirus','Huawei',2,'Antivirus Norton de Regalo - se enviará un correo electrónico con el código para activar la licencia de 60 días totalmente gratis. Condiciones: la activación debe ser durante los 7 primeros días de la recepción del correo, caso contrario se inactivará y se considerará en desuso.',2399.00,100,'UND','SOL','imagen1.png','imagen2.png','imagen3.png','imagen4.png','imagen5.png',1,1)
+CALL sp_InsertProductos('HP 15.6" FHD, Ryzen 5-5500U, 8GB RAM, 256GB SSD, SPRUCE BLUE, Windows 11','HP',2,'Windows 11 with 6-core AMD Ryzen 5 5500U ProcessorFast charge laptop computer for school or home',1899.00,100,'UND','SOL','imagen1.png','imagen2.png','imagen3.png','imagen4.png','imagen5.png',1,1)
+CALL sp_InsertProductos('Cortavientos impermeable Hombre - Ciclismo - Ropa Deportiva - Alpha Fit','Alpha Fit ',3,'Tejido impermeable: Te mantendrá seco bajo la lluvia.Forro interno de malla: Te mantendrá abrigado durante el frío.Ideal para entrenarEl modelo mide 1.72m, pesa 74kg y usa talla M',98.10,100,'UND','SOL','imagen1.png','imagen2.png','imagen3.png','imagen4.png','imagen5.png',1,2)
+CALL sp_InsertPais('Perú')
+CALL sp_InsertPais('Argentina')
+CALL sp_InsertPais('Bolivia')
+CALL sp_InsertCiudad(1,'Arequipa')
+CALL sp_InsertCiudad(1,'Trujillo')
+CALL sp_InsertCiudad(2,'Rosario')
+CALL sp_InsertCliente('Maria Juana','Oscar Jara',30,'Jara1233@gmail.com',956412374,'imagen.png')
+CALL sp_InsertCliente('Marco Jerson','Quispe Mamani',40,'123Quispe@gmail.com',964578941,'imagen.png')
+CALL sp_InsertDireccion(1,'Calle Palmeras 123',2)
+CALL sp_InsertDireccion(2,'Calle Pinos 45',3)
+CALL sp_InsertRoll('Admin','ADM')
+CALL sp_InsertRoll('Usuario','USU')
+CALL sp_InsertUser(1,1,'Mallqui123','jjpld6pl9yiy',1)
+CALL sp_InsertUser(2,2,'Quispe123','jlosertiser123',1)
+CALL sp_InsertMedioPago(1,'Visa','1234-4564-7894-4561','456','2027-01-31')
+CALL sp_InsertPedido(1,1,'2022-01-31','EmpresaOlx',2399,1.199,'Calle Palmeras 123',1,1.200,1)
+CALL sp_InsertCarritoCompra(1,1,1)
+select * from descuento
+INSERT INTO DESCUENTO(id_Product,dscto1,dscto2,dscto3,dscto4)VALUES(1,50,10,15,20)
+INSERT INTO DESCUENTO(id_Product,dscto1,dscto2,dscto3,dscto4)VALUES(2,80,30,10,30)
+INSERT INTO DESCUENTO(id_Product,dscto1,dscto2,dscto3,dscto4)VALUES(3,60,20,40,30)
+
+
+CALL sp_SelectProdXSubCategory('Laptops')
+CALL sp_SelectProdXSubCategoryXPrecio('Laptops',1899)
+call sp_SelectConsultaProd('Huawei')
+CALL sp_SelectCiudadesXPais('Perú')
 
 
