@@ -3,6 +3,7 @@
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 USE App\Controllers\BaseController;
+use \Exception;
 
 class LineController extends BaseController{
     public function getAllLine($request,$response,$args){
@@ -14,7 +15,7 @@ class LineController extends BaseController{
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);
         }
-        catch(PDOException $e)
+        catch(Exception $e)
         {
             $result = array($e->getMessage());
             return $this->jsonResponse($response,'error',$result,400);

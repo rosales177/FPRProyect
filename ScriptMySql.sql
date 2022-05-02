@@ -64,8 +64,8 @@ DROP TABLE IF EXISTS ROLL;
 CREATE TABLE IF NOT EXISTS ROLL
 (
 	id_Roll int not null auto_increment,
-	Descript_Roll nvarchar(50),
-    _Value char(6),
+	Descript_Roll nvarchar (50) not null,
+    _Value char(6) not null,
     PRIMARY KEY(id_Roll)
 );
 DROP TABLE IF EXISTS USER_;
@@ -113,11 +113,11 @@ CREATE TABLE IF NOT EXISTS PRODUCTOS
 	Stock smallint not null,
     Unidad nvarchar(10) not null,
     Moneda nvarchar(20) not null,
-	Img1 varchar(250) not null,
-    Img2 varchar(250) not null,
-    Img3 varchar(250) not null,
-    Img4 varchar(250) not null,
-    Img5 varchar(250) not null,
+	Img1 nvarchar(250) not null,
+    Img2 nvarchar(250) not null,
+    Img3 nvarchar(250) not null,
+    Img4 nvarchar(250) not null,
+    Img5 nvarchar(250) not null,
     NDescuento smallint not null,
 	_Status bool,
     PRIMARY KEY(id_Product),
@@ -148,7 +148,7 @@ CREATE TABLE IF NOT EXISTS CARRITOCOMPRA
 (
 	N_Pedido smallint not null,
 	id_Product int not null,
-	Car_Cantidad smallint not null,
+	Car_Cantidad decimal(7,2) not null,
     CONSTRAINT Fk_CarritoCompra_Productos
     FOREIGN KEY  (id_Product)
     REFERENCES PRODUCTOS(id_Product),
@@ -164,7 +164,7 @@ CREATE TABLE IF NOT EXISTS HISTORIALCOMPRA
 	FechaEmision date not null,
 	DirecEnvio nvarchar(100) not null,
 	SubTotal decimal(7,2) not null,
-	Total decimal(7,2) not null,
+	Total smallint not null,
 	TotalPagar decimal(7,2) not null,
     Descuento decimal(7,2) not null
 );
@@ -304,13 +304,11 @@ END;
 
 DROP VIEW IF EXISTS v_sCantidadCategory;
 CREATE VIEW v_sCantidadCategory
-AS
-	SELECT COUNT(*) CANTIDAD_CATEGORY FROM categoria;
+AS SELECT COUNT(*) CANTIDAD_CATEGORY FROM categoria;
 
 DROP VIEW IF EXISTS v_sSelectCategoria;
 CREATE VIEW v_sSelectCategoria
-AS
-	SELECT CA.`id_Categoria`,CA.`Nom_Category` FROM CATEGORIA AS CA  LIMIT 30
+AS SELECT CA.`id_Categoria`,CA.`Nom_Category` FROM CATEGORIA AS CA  LIMIT 30
 #######################################################SUBCATEGORIA ###########################################################################
 DROP PROCEDURE IF EXISTS sp_InsertSubCategoria;
 DELIMITER $$
@@ -432,15 +430,6 @@ sp:BEGIN
     COMMIT; 
 END;
 
-DROP VIEW IF EXISTS v_sCantidadSubCategory;
-CREATE VIEW v_sCantidadSubCategory
-AS SELECT COUNT(*) CANTIDAD_SUBCATEGORY FROM subcategorias;
-
-DROP VIEW IF EXISTS v_sSelectSubCategoria;
-CREATE VIEW v_sSelectSubCategoria
-AS
-	SELECT SUB.`id_SubCategory`,CAT.`Nom_Category`,SUB.`Nom_SubCategory` FROM SUBCATEGORIAS AS SUB JOIN CATEGORIA AS CAT ON(SUB.`id_Category` = CAT.`id_Categoria`) LIMIT 30
-    
 DROP PROCEDURE IF EXISTS sp_SelectSubCategoryXCategory;
 DELIMITER $$
 CREATE PROCEDURE sp_SelectSubCategoryXCategory
@@ -475,6 +464,15 @@ sp:BEGIN
         END IF;
     COMMIT; 
 END;
+
+DROP VIEW IF EXISTS v_sCantidadSubCategory;
+CREATE VIEW v_sCantidadSubCategory
+AS SELECT COUNT(*) CANTIDAD_SUBCATEGORY FROM subcategorias;
+
+DROP VIEW IF EXISTS v_sSelectSubCategoria;
+CREATE VIEW v_sSelectSubCategoria
+AS SELECT SUB.`id_SubCategory`,CAT.`Nom_Category`,SUB.`Nom_SubCategory` FROM
+SUBCATEGORIAS AS SUB JOIN CATEGORIA AS CAT ON(SUB.`id_Category` = CAT.`id_Categoria`) LIMIT 30
 ###########################################################PRODUCTOS#####################################################################
 DROP PROCEDURE IF EXISTS sp_InsertProductos;
 DELIMITER $$
@@ -839,29 +837,17 @@ sp:BEGIN
     COMMIT; 
 END;
 
-CALL sp_SelectProdXSubCategory('Laptops')
-CALL sp_SelectProdXSubCategoryXPrecio('Laptops',1899)
-call sp_SelectConsultaProd('HP 15.6" FHD, Ryzen 5-5500U, 8GB RAM, 256GB SSD, SPRUCE BLUE, Windows 11')
-CALL sp_SelectCiudadesXPais('Perú')
-select * from productos
-
 DROP VIEW IF EXISTS v_sCantidadProduct;
 CREATE VIEW v_sCantidadProduct
-AS
-	SELECT COUNT(*) CANTIDAD_PRODUCTOS FROM productos;
-    
+AS SELECT COUNT(*) CANTIDAD_PRODUCTOS FROM productos;
+
 DROP VIEW IF EXISTS v_sSelectProducto;
 CREATE VIEW v_sSelectProducto
-AS
-	SELECT PD.`id_Product`,PD.Nombre_Product,PD.Marca_Product,PD.`Descript_Product`,PD.`Precio`,PD.`Stock`,PD.`Unidad`,PD.`Moneda`,SUB.`Nom_SubCategory`,CAT.`Nom_Category`,PD.`Img1`,PD.`Img2`,PD.`Img3`,PD.`Img4`,PD.`Img5`,PD.`NDescuento`,PD.`_Status`,DE.`dscto1`,DE.`dscto2`,DE.`dscto3`,DE.`dscto4`
-	FROM PRODUCTOS as PD
-	JOIN SUBCATEGORIAS as SUB
-	ON (PD.`id_SubCategory` = SUB.`id_SubCategory`)
-	JOIN CATEGORIA AS CAT
-	ON(SUB.`id_Category` = CAT.`id_Categoria`)
-	JOIN DESCUENTO AS DE
-	ON(DE.id_Product = PD.id_Product)
-    LIMIT 30;
+AS 	SELECT PD.`id_Product`,PD.Nombre_Product,PD.Marca_Product,PD.`Descript_Product`,
+	PD.`Precio`,PD.`Stock`,PD.`Unidad`,PD.`Moneda`,SUB.`Nom_SubCategory`,CAT.`Nom_Category`,
+    PD.`Img1`,PD.`Img2`,PD.`Img3`,PD.`Img4`,PD.`Img5`,PD.`NDescuento`,PD.`_Status`
+	FROM PRODUCTOS as PD JOIN SUBCATEGORIAS as SUB ON (PD.`id_SubCategory` = SUB.`id_SubCategory`)
+	JOIN CATEGORIA AS CAT ON(SUB.`id_Category` = CAT.`id_Categoria`) JOIN DESCUENTO AS DE ON(DE.id_Product = PD.id_Product) LIMIT 30;
 ############################################################ PAIS ################################################################################################
 DROP PROCEDURE IF EXISTS sp_InsertPais;
 DELIMITER $$
@@ -964,13 +950,11 @@ sp:BEGIN
 END;
 
 DROP VIEW IF EXISTS v_sCantidadCountry;
-CREATE VIEW v_sCantidadCountry
-AS SELECT COUNT(*) CANTIDAD_COUNTRY FROM pais;
+CREATE VIEW v_sCantidadCountry AS SELECT COUNT(*) CANTIDAD_COUNTRY FROM pais;
 
 DROP VIEW IF EXISTS v_SelectPais;
 CREATE VIEW v_SelectPais
-AS
-	SELECT PS.id_Pais,PS.`Uk_Pais` FROM PAIS AS PS LIMIT 30;
+AS SELECT PS.id_Pais,PS.`Uk_Pais` FROM PAIS AS PS LIMIT 30;
 ###########################################################CIUDAD############################################################################################
 DROP PROCEDURE IF EXISTS sp_InsertCiudad;
 DELIMITER $$
@@ -1084,15 +1068,6 @@ sp:BEGIN
         from ciudad C join pais P on(C.id_Pais = P.id_Pais) WHERE id_Ciudad = ciudadid;
     COMMIT; 
 END;
-
-DROP VIEW IF EXISTS v_sCantidadCity;
-CREATE VIEW v_sCantidadCity
-AS SELECT COUNT(*) CANTIDAD_CITY FROM ciudad;
-
-DROP VIEW IF EXISTS v_sSelectCiudad;
-CREATE VIEW v_sSelectCiudad
-AS
-	SELECT CIU.`id_Ciudad`,PS.`Uk_Pais`,CIU.`Uk_Nombre` FROM CIUDAD AS CIU JOIN PAIS AS PS ON(CIU.`id_Pais` = PS.`id_Pais`) LIMIT 30
     
 DROP PROCEDURE IF EXISTS sp_SelectCiudadesXPais;
 DELIMITER $$
@@ -1126,6 +1101,13 @@ sp:BEGIN
         END IF;
     COMMIT; 
 END;
+
+DROP VIEW IF EXISTS v_sCantidadCity;
+CREATE VIEW v_sCantidadCity AS SELECT COUNT(*) CANTIDAD_CITY FROM ciudad;
+
+DROP VIEW IF EXISTS v_sSelectCiudad;
+CREATE VIEW v_sSelectCiudad
+AS SELECT CIU.`id_Ciudad`,PS.`Uk_Pais`,CIU.`Uk_Nombre` FROM CIUDAD AS CIU JOIN PAIS AS PS ON(CIU.`id_Pais` = PS.`id_Pais`) LIMIT 30
 ###############################################CLIENTE###############################################################################
 DROP PROCEDURE IF EXISTS sp_InsertCliente;
 DELIMITER $$
@@ -1265,13 +1247,12 @@ sp:BEGIN
 END;
 
 DROP VIEW IF EXISTS v_sCantidadClients;
-CREATE VIEW v_sCantidadClients
-AS SELECT COUNT(*) CANTIDAD_CLIENTE FROM cliente;
+CREATE VIEW v_sCantidadClients AS SELECT COUNT(*) CANTIDAD_CLIENTE FROM cliente;
 
 DROP VIEW IF EXISTS v_sSelectCliente;
 CREATE VIEW v_sSelectCliente
-AS
-	SELECT CL.`id_Cliente`,CL.`Nombre_Cliente`,CL.`Apellido_Cliente`,CL.`Edad_Cliente`,CL.`Correo`,CL.`Contacto`,CL.Img FROM CLIENTE AS CL	LIMIT 30	
+AS 	SELECT CL.`id_Cliente`,CL.`Nombre_Cliente`,CL.`Apellido_Cliente`,CL.`Edad_Cliente`,
+	CL.`Correo`,CL.`Contacto`,CL.Img FROM CLIENTE AS CL	LIMIT 30	
 #################################################################### DIRECCIONES ############################################################################
 DROP PROCEDURE IF EXISTS sp_InsertDireccion;
 DELIMITER $$
@@ -1346,8 +1327,7 @@ sp:BEGIN
 		UPDATE DIRECCIONES SET `id_Cliente` = idCliente ,`Direccion` = Direccion ,`id_Ciudad` = idCiudad  WHERE `id_Direct` = idDirec; 
     COMMIT; 
 END;
-select * from direcciones
-CALL sp_UpdateDireccion()
+
 DROP PROCEDURE IF EXISTS sp_DeleteDireccion;
 DELIMITER $$
 CREATE PROCEDURE sp_DeleteDireccion
@@ -1375,7 +1355,6 @@ sp:BEGIN
     COMMIT; 
 END;
 set SQL_SAFE_UPDATES = 0;
-CALL sp_DeleteDireccion()
 
 DROP PROCEDURE IF EXISTS sp_SelectDireccionId;
 DELIMITER $$
@@ -1406,28 +1385,20 @@ sp:BEGIN
         WHERE DIR.`id_Direct` = idDirect ;
     COMMIT; 
 END;
-CALL sp_SelectDireccionId(2)
 
 DROP VIEW IF EXISTS v_sSelectDireccion;
 CREATE VIEW v_sSelectDireccion
 AS
-	SELECT DIR.`id_Direct`,CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) AS Cliente,DIR.`Direccion`,CIU.`Uk_Nombre` Ciudad,PS.`Uk_Pais` Pais
-	FROM DIRECCIONES as DIR
-	JOIN CLIENTE as CLI
-	ON (DIR.`id_Cliente` = CLI.`id_Cliente`)
-	JOIN CIUDAD AS CIU
-	ON(DIR.`id_Ciudad` = CIU.`id_Ciudad`)
-	JOIN PAIS AS PS
-	ON(CIU.id_Pais  = PS.`id_Pais`)
-    LIMIT 30;
-SELECT * FROM v_sSelectDireccion
-
+	SELECT DIR.`id_Direct`,CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) AS Cliente,
+    DIR.`Direccion`,CIU.`Uk_Nombre` Ciudad,PS.`Uk_Pais` Pais
+	FROM DIRECCIONES as DIR JOIN CLIENTE as CLI ON (DIR.`id_Cliente` = CLI.`id_Cliente`)
+	JOIN CIUDAD AS CIU ON(DIR.`id_Ciudad` = CIU.`id_Ciudad`) JOIN PAIS AS PS
+	ON(CIU.id_Pais  = PS.`id_Pais`) LIMIT 30;
+    
 DROP VIEW IF EXISTS v_sCantidadDireccion;
 CREATE VIEW v_sCantidadDireccion
 AS SELECT COUNT(*) CANTIDAD_DIRECCION FROM direcciones;
-SELECT * FROM v_sCantidadDireccion
 ###################################################################ROL##############################################################################
-
 DROP PROCEDURE IF EXISTS sp_InsertRoll;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertRoll
@@ -1543,6 +1514,9 @@ sp:BEGIN
     COMMIT;     
 END;
 
+CREATE VIEW v_sCantidadRol
+AS SELECT COUNT(*) CANTIDAD_ROL FROM ROLL;
+
 DROP VIEW IF EXISTS v_sSelectRoll;
 CREATE VIEW v_sSelectRoll
 AS SELECT RL.id_Roll,RL.Descript_Roll,RL._Value FROM ROLL as RL LIMIT 30;
@@ -1590,6 +1564,21 @@ sp:BEGIN
         SELECT 'El Status del User no puede ser nula o menor a cero.' as message;
         LEAVE sp;
     END IF;
+    IF (exists(SELECT id_Cliente FROM user_ WHERE id_Cliente = idCliente))
+    THEN
+		SELECT 'Cliente Existente en el User .' as message;
+        LEAVE sp;
+	END IF;
+    IF (exists(SELECT _Username FROM user_ WHERE _Username = Username))
+    THEN
+		SELECT 'Username Existente .' as message;
+        LEAVE sp;
+	END IF;
+    IF (LENGTH(_Password)<7)
+    THEN
+		SELECT 'Password debe contener 7 caracteres .' as message;
+        LEAVE sp;
+	END IF;
  	START TRANSACTION;
 		INSERT INTO USER_ (`id_Cliente`,`id_Roll`,`_Username`,`_Password`,`_Status`) VALUES (idCliente,idRoll,Username,_Password,_Status);
     COMMIT; 
@@ -1600,7 +1589,6 @@ DELIMITER $$
 CREATE PROCEDURE sp_UpdateUser
 (
 IN idCliente int,
-IN _Username nvarchar(250),
 IN _Password nvarchar(250)
 
 )
@@ -1615,18 +1603,18 @@ sp:BEGIN
 		SELECT 'El id del cliente no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-    IF (LENGTH(_Username) = 0 or _Username= " ")
-    THEN
-		SELECT 'El username no puede ser nula o con valor en blanco.' as message;
-        LEAVE sp;
-    END IF;
     IF (LENGTH(_Password) = 0 or _Password = " ")
     THEN
 		SELECT 'El password no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
+    IF (LENGTH(_Password)<7)
+    THEN
+		SELECT 'Password debe contener 7 caracteres .' as message;
+        LEAVE sp;
+	END IF;
  	START TRANSACTION;
-		UPDATE USER_ SET  `_Username` = _Username,`_Password` = _Password  WHERE `id_Cliente` = idCliente;
+		UPDATE USER_ SET `_Password` = _Password  WHERE `id_Cliente` = idCliente;
     COMMIT; 
 END;
 
@@ -1676,7 +1664,7 @@ sp:BEGIN
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-        SELECT CLI.Nombre_Cliente,CLI.Apellido_Cliente,RL.Descript_Roll,US._Username,US._Password,US._Status
+        SELECT CLI.id_Cliente,CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) Cliente ,Descript_Roll,US._Username,US._Password,US._Status
 		FROM USER_ as US
 		JOIN CLIENTE as CLI
 		ON (US.`id_Cliente` = CLI.`id_Cliente`)
@@ -1686,16 +1674,15 @@ sp:BEGIN
     COMMIT; 
 END;
 
+CREATE VIEW v_sCantidadUser
+AS SELECT COUNT(*) CANTIDAD_USER FROM USER_;
+
 DROP VIEW IF EXISTS v_sSelectUser;
 CREATE VIEW v_sSelectuser
 AS
-	SELECT CLI.Nombre_Cliente,CLI.Apellido_Cliente ,Descript_Roll,US._Username,US._Password,US._Status
-	FROM USER_ as US
-	JOIN CLIENTE as CLI
-	ON (US.`id_Cliente` = CLI.`id_Cliente`)
-	JOIN ROLL AS RL
-	ON(US.`id_Cliente`= RL.`id_Roll`)
-    LIMIT 30;
+	SELECT CLI.id_Cliente,CONCAT_WS(' ',CLI.Nombre_Cliente,CLI.Apellido_Cliente) Cliente ,RL.Descript_Roll,US._Username,US._Password,US._Status
+	FROM USER_ as US JOIN CLIENTE as CLI ON (US.`id_Cliente` = CLI.`id_Cliente`) JOIN ROLL AS RL
+	ON(US.`id_Cliente`= RL.`id_Roll`) LIMIT 30;
 ##############################################################MEDIODEPAGO###############################################################
 DROP PROCEDURE IF EXISTS sp_InsertMedioPago;
 DELIMITER $$
@@ -1743,7 +1730,6 @@ DELIMITER $$
 CREATE PROCEDURE sp_UpdateMedioPago
 (
 IN idMedioPago int,
-IN MedioPago nvarchar(250),
 IN NumeroTarjeta char(50),
 IN CVV char(3),
 IN FechaVencimiento date
@@ -1759,11 +1745,6 @@ sp:BEGIN
 		SELECT 'El id del medio de pago no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-    IF (LENGTH(MedioPago) = 0 or MedioPago= " ")
-    THEN
-		SELECT 'El medio de pago no puede ser nula o con valor en blanco.' as message;
-        LEAVE sp;
-    END IF;
     IF (LENGTH(NumeroTarjeta) = 0 or NumeroTarjeta= " ")
     THEN
 		SELECT 'El numero de tarjeta no puede ser nula o con valor en blanco.' as message;
@@ -1775,7 +1756,7 @@ sp:BEGIN
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		UPDATE MEDIOPAGO SET `MedioPago` = MedioPago,`NumeroTarjeta`=NumeroTarjeta,`CVV` = CVV,`FechaVencimiento`=FechaVencimiento  WHERE `id_MedioPago` = idMedioPago;
+		UPDATE MEDIOPAGO SET `NumeroTarjeta`=NumeroTarjeta,`CVV` = CVV,`FechaVencimiento`=FechaVencimiento  WHERE `id_MedioPago` = idMedioPago;
     COMMIT;
 END;
 
@@ -1798,7 +1779,7 @@ sp:BEGIN
     END IF;
     IF (not exists(SELECT id_MedioPago FROM mediopago WHERE id_MedioPago =  idMedioPago))
     THEN
-		SELECT 'No existente id MedioPago para el Delete.' as message;
+		SELECT 'No existente id MedioPago.' as message;
         LEAVE sp;
 	END IF;
  	START TRANSACTION;
@@ -1825,17 +1806,20 @@ sp:BEGIN
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-        SELECT M.id_MedioPago,CONCAT_WS(' ',C.Nombre_Cliente,C.Apellido_Cliente) AS Cliente,M.MedioPago,M.NumeroTarjeta,M.CVV,M.FechaVencimiento
+        SELECT M.id_MedioPago,C.Nombre_Cliente,C.Apellido_Cliente,C.Edad_Cliente,C.Correo,C.Contacto,M.MedioPago,M.NumeroTarjeta,M.CVV,M.FechaVencimiento
         FROM mediopago M JOIN cliente C on(M.id_Cliente = C.id_Cliente)
         where M.id_MedioPago = pagoid;
     COMMIT; 
 END;
 
+CREATE VIEW v_sCantidadPayment
+AS SELECT COUNT(*) CANTIDAD_PAYMENT FROM  mediopago;
+
 DROP VIEW IF EXISTS v_sSelectMedioPago;
 CREATE VIEW v_sSelectMedioPago
-AS
-		 SELECT M.id_MedioPago,CONCAT_WS(' ',C.Nombre_Cliente,C.Apellido_Cliente) AS Cliente,M.MedioPago,M.NumeroTarjeta,M.CVV,M.FechaVencimiento
-        FROM mediopago M JOIN cliente C on(M.id_Cliente = C.id_Cliente) LIMIT 30;
+AS SELECT M.id_MedioPago,C.Nombre_Cliente,C.Apellido_Cliente,C.Edad_Cliente,
+		C.Correo,C.Contacto,M.MedioPago,M.NumeroTarjeta,M.CVV,M.FechaVencimiento
+		FROM mediopago M JOIN cliente C on(M.id_Cliente = C.id_Cliente) LIMIT 30;
 #################################################PEDIDO#################################################################
 DROP PROCEDURE IF EXISTS sp_InsertPedido;
 DELIMITER $$
@@ -1917,10 +1901,7 @@ sp:BEGIN
 		INSERT INTO PEDIDO(id_Cliente,N_Pedido,FechaEmision,Emp_Envio,Sub_Total,Descuento,Diret_Envio,Total,TotalPagar,_Status)VALUES(idCliente,NPedido,FeEmision,EmpEnvio,SubTotal,Descuento,DiretEnvio,Total,TotalPagar,Statu);
     COMMIT; 
 END;
-sdsdsdasd
-CALL sp_InsertPedido(1,1,'2022-01-31','EmpresaOlx',2399,12,'Calle Palmeras 123',1,2397,1)
-select * from pedido
-select * from cliente
+
 DROP PROCEDURE IF EXISTS sp_UpdatePedido;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdatePedido
@@ -1945,8 +1926,7 @@ sp:BEGIN
 		UPDATE pedido SET `FechaEmision` = FeEmision,`Emp_Envio`= EmpEnvio,`Sub_Total` = SubTotal,`Descuento`=Descuento,`Diret_Envio` = DiretEnvio,`Total` = Total ,`TotalPagar` = TotalPagar,`_Status` = Statu WHERE `N_Pedido` = NPedido;
     COMMIT;
 END;
-CALL sp_UpdatePedido(5,'2022-01-31','EmpresaOlx',2399,12,'Calle Palmeras 123',1,2397,1)
-SELECT * FROM PRODI
+
 DROP PROCEDURE IF EXISTS sp_DeletePedido;
 DELIMITER $$
 CREATE PROCEDURE sp_DeletePedido
@@ -1994,7 +1974,8 @@ sp:BEGIN
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-        SELECT CONCAT_WS(' ',C.Nombre_Cliente,C.Apellido_Cliente) AS Cliente,P.N_Pedido,P.FechaEmision,P.Emp_Envio,P.Sub_Total,P.Descuento,P.Diret_Envio,P.Total,P.TotalPagar,P._Status
+        SELECT C.id_Cliente,C.Nombre_Cliente,C.Apellido_Cliente,C.Edad_Cliente,C.Correo,C.Contacto,P.N_Pedido,
+        P.FechaEmision,P.Sub_Total,P.Total,P.TotalPagar,P.Emp_Envio,P.Diret_Envio,P._Status
         FROM PEDIDO P JOIN CLIENTE C ON(P.id_Cliente = C.id_Cliente)
         where P.N_Pedido = NPedido;
     COMMIT; 
@@ -2002,17 +1983,20 @@ END;
 
 DROP VIEW IF EXISTS v_sSelectPedido;
 CREATE VIEW v_sSelectPedido
-AS
-		SELECT CONCAT_WS(' ',C.Nombre_Cliente,C.Apellido_Cliente) AS Cliente,P.N_Pedido,P.FechaEmision,P.Sub_Total,P.Total,P.TotalPagar,P.Emp_Envio,P.Diret_Envio,P._Status
+AS SELECT C.id_Cliente,C.Nombre_Cliente,C.Apellido_Cliente,C.Edad_Cliente,C.Correo,C.Contacto,P.N_Pedido,
+        P.FechaEmision,P.Sub_Total,P.Total,P.TotalPagar,P.Emp_Envio,P.Diret_Envio,P._Status 
         FROM PEDIDO P JOIN CLIENTE C ON(P.id_Cliente = C.id_Cliente)  LIMIT 30
+        
+CREATE VIEW v_sCantidadPedido
+AS SELECT COUNT(*) CANTIDAD_PEDIDO FROM  PEDIDO;
 ################################################################CARRITOCOMPRA############################################
 DROP PROCEDURE IF EXISTS sp_InsertCarritoCompra;
 DELIMITER $$
 CREATE PROCEDURE sp_InsertCarritoCompra
 (
 IN NPedido smallint,
-IN idProduct int,
-IN CarCantidad smallint
+IN idProduct smallint,
+IN CarCantidad decimal(7,2)
 )
 sp:BEGIN
 DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -2035,17 +2019,22 @@ DECLARE EXIT HANDLER FOR SQLEXCEPTION
 		SELECT 'La Cantidad del CarritoCompra no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
+    IF (exists(SELECT id_Product FROM CARRITOCOMPRA WHERE id_Product= idProduct and N_Pedido=NPedido))
+    THEN
+		SELECT 'Existente en el Carrito Compra.' as message;
+        LEAVE sp;
+	END IF;
  	START TRANSACTION;
 		INSERT INTO CARRITOCOMPRA(N_Pedido,id_Product,Car_Cantidad)VALUES(NPedido,idProduct,CarCantidad);
     COMMIT; 
 END;
-
 DROP PROCEDURE IF EXISTS sp_UpdateCarritoCompra;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdateCarritoCompra
 (
-IN idProduct int,
-IN CarCantidad smallint
+IN NPedido smallint,
+IN idProduct smallint,
+IN CarCantidad decimal(7,2)
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -2053,6 +2042,11 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR EL CARRITO DE COMPRA' as message;
 	END;
+    IF (NPedido = 0 or NPedido is null)
+    THEN
+		SELECT 'El NPedido no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
     IF (idProduct = 0 or idProduct is null)
     THEN
 		SELECT 'El id del producto no puede ser nula o cero.' as message;
@@ -2060,11 +2054,11 @@ sp:BEGIN
     END IF;
     IF (CarCantidad = 0 or CarCantidad is null)
     THEN
-		SELECT 'La cantidad no puede ser nula o cero.' as message;
+		SELECT 'La Cantidad del CarritoCompra no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		UPDATE carritocompra SET `Car_Cantidad` = CarCantidad WHERE `id_Product` = idProduct;
+		UPDATE carritocompra SET `Car_Cantidad` = CarCantidad WHERE `id_Product` = idProduct and `N_Pedido` = NPedido ;
     COMMIT;
 END;
 
@@ -2072,7 +2066,8 @@ DROP PROCEDURE IF EXISTS sp_DeleteCarritoCompra;
 DELIMITER $$
 CREATE PROCEDURE sp_DeleteCarritoCompra
 (
-IN idProduct int
+IN NPedido smallint,
+IN idProduct smallint
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -2080,27 +2075,32 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ELIMINAR CARRITO DE COMPRA' as message;
 	END;
-    IF (idProduct= 0 or idProduct is null)
+    IF (NPedido = 0 or NPedido is null)
+    THEN
+		SELECT 'El NPedido no puede ser nula o con valor en blanco.' as message;
+        LEAVE sp;
+    END IF;
+    IF (idProduct = 0 or idProduct is null)
     THEN
 		SELECT 'El id del producto no puede ser nula o cero.' as message;
         LEAVE sp;
     END IF;
-    IF (not exists(SELECT id_Product FROM carritocompra WHERE id_Product =  idProduct))
+    IF (not exists(SELECT * FROM carritocompra WHERE id_Product =  idProduct and N_Pedido = NPedido))
     THEN
-		SELECT 'No existente id producto del carrito de compra.' as message;
+		SELECT 'No existente en el carrito de compra.' as message;
         LEAVE sp;
 	END IF;
  	START TRANSACTION;
-		DELETE FROM carritocompra WHERE `id_Product` = idProduct;
+		DELETE FROM carritocompra WHERE `id_Product` = idProduct and N_Pedido = NPedido ;
     COMMIT; 
 END;
 set SQL_SAFE_UPDATES = 0;
 
-DROP PROCEDURE IF EXISTS sp_SelectCarritoCompraId;
+DROP PROCEDURE IF EXISTS sp_SelectCarritoCompra;
 DELIMITER $$
-CREATE PROCEDURE sp_SelectCarritoCompraId
+CREATE PROCEDURE sp_SelectCarritoCompra
 (
-IN idproduct int
+IN NPedido int
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -2108,27 +2108,19 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE BUSCAR' as message;
 	END;
-    IF (idproduct= 0 or idproduct  is null)
+    IF (NPedido = 0 or NPedido is null)
     THEN
-		SELECT 'EL id del producto del carrito de compra no puede ser nula o cero.' as message;
+		SELECT 'El NPedido no puede ser nula o con valor en blanco.' as message;
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-        SELECT P.Nombre_Product,P.Marca_Product,P.Descript_Product,P.Img1,P.Precio,P.NDescuento,P.Stock,D.dscto1,D.dscto2,D.dscto3,D.dscto4
-        FROM CARRITOCOMPRA C JOIN PRODUCTOS P ON(C.id_Product = P.id_Product) join descuento as D
-        on(P.id_Product=D.id_Product)
-        where C.id_Product = idproduct;
+        SELECT C.N_Pedido,P.Nombre_Product,P.Marca_Product,P.Descript_Product,P.Precio,P.Img1,C.Car_Cantidad
+		FROM CARRITOCOMPRA C JOIN PRODUCTOS P ON(C.id_Product = P.id_Product) join descuento as D
+		on(P.id_Product=D.id_Product) JOIN PEDIDO AS PA
+		on(PA.N_Pedido = C.N_Pedido)
+        where C.N_Pedido = NPedido;
     COMMIT; 
 END;
-
-DROP VIEW IF EXISTS v_sSelectCarritoCompra;
-CREATE VIEW v_sSelectCarritoCompra
-AS
-SELECT * FROM CARRITOCOMPRA
-SELECT * FROM PRODUCTOS
-SELECT * FROM PEDIDO
-		SELECT P.Nombre_Product,P.Marca_Product,P.Descript_Product,P.Img1,P.Precio,C.Car_Cantidad
-        FROM CARRITOCOMPRA C JOIN PRODUCTOS P ON(C.id_Product = P.id_Product) LIMIT 30;
         
 DROP PROCEDURE IF EXISTS v_sSelectCarritoCompra;
 DELIMITER $$
@@ -2145,15 +2137,16 @@ sp:BEGIN
         SET a = (select count(*) from CARRITOCOMPRA); 
         IF (a>0)
         THEN
-			SELECT P.Nombre_Product,P.Marca_Product,P.Descript_Product,P.Img1,P.Precio,P.NDescuento,P.Stock,D.dscto1,D.dscto2,D.dscto3,D.dscto4
+			SELECT C.N_Pedido,P.Nombre_Product,P.Marca_Product,P.Descript_Product,P.Precio,P.Img1,C.Car_Cantidad
 			FROM CARRITOCOMPRA C JOIN PRODUCTOS P ON(C.id_Product = P.id_Product) join descuento as D
-			on(P.id_Product=D.id_Product);
+			on(P.id_Product=D.id_Product) JOIN PEDIDO AS PA
+            on(PA.N_Pedido = C.N_Pedido);
 		ELSEIF(a=0)THEN 
 			SELECT 'No contiene producto' as message;
         END IF;
     COMMIT; 
 END;
-#################################historialdepago###############################################################
+#################################HistorialdeCompra###############################################################
 DROP PROCEDURE IF EXISTS sp_InsertHistorialCompra
 DELIMITER $$
 CREATE PROCEDURE sp_InsertHistorialCompra
@@ -2162,10 +2155,10 @@ IN NPedido smallint,
 IN Cliente nvarchar(100),
 IN FeEmision date,
 IN DirecEnvio nvarchar(100),
-IN SubTotal smallint,
+IN SubTotal decimal(7,2),
 IN Total smallint,
-IN TotalPagar smallint,
-IN Descuento float
+IN TotalPagar decimal(7,2),
+IN Descuento decimal(7,2)
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -2173,32 +2166,28 @@ sp:BEGIN
 		rollback;
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE INSERTAR HISTORIAL PEDIDO' as message;
 	END;
-    IF (exists(SELECT N_Pedido FROM historialcompra  WHERE N_Pedido =  NPedido))
+    IF (exists(SELECT N_Pedido FROM historialcompra WHERE N_Pedido = NPedido ))
     THEN
-		SELECT 'Existente N_PEDIDO.' as message;
+		SELECT 'Ya existente N_Pedido.' as message;
         LEAVE sp;
 	END IF;
  	START TRANSACTION;
 		INSERT INTO historialcompra(N_Pedido,Cliente,FechaEmision,DirecEnvio,SubTotal,Total,TotalPagar,Descuento)VALUES(NPedido,Cliente,FeEmision,DirecEnvio,SubTotal,Total,TotalPagar,Descuento);
     COMMIT; 
 END;
-CALL sp_InsertHistorialCompra(1,'Torres Miguel','2022-06-04','DirecEnvio',10000,1,,10)
-select * from historialcompra
-select * from pedido
-CALL sp_InsertPedido(1,1,'2022-01-31','EmpresaOlx',2399,1.199,'Calle Palmeras 123',1,1.200,1)
+
 DROP PROCEDURE IF EXISTS sp_UpdateHistorialCompra;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdateHistorialCompra
 (
 IN NPedido smallint,
-IN Cliente nvarchar(100),
-IN Fecha date,
-IN Dir nvarchar(100),
-IN SuT smallint,
-IN Totl smallint,
-IN TotP smallint,
-IN Descuent float
-
+IN Clien nvarchar(100),
+IN FeEmision date,
+IN DirecEnvio nvarchar(100),
+IN SubTotal decimal(7,2),
+IN Total smallint,
+IN TotalPagar decimal(7,2),
+IN Descuento decimal(7,2)
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -2207,10 +2196,9 @@ sp:BEGIN
 		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE ACTUALIZAR EL HISTORIAL PEDIDO' as message;
 	END;
  	START TRANSACTION;
-		UPDATE historialcompra SET Cliente = Cliente,FechaEmision=Fecha,DirecEnvio= Dir,SubTotal=SuT,Total=Totl,TotalPagar=TotP,Descuento=Descuent WHERE N_Pedido = NPedido;
+		UPDATE historialcompra SET Cliente=Clien,FechaEmision=FeEmision,DirecEnvio= DirecEnvio,SubTotal=SubTotal,Total=Total,TotalPagar=TotalPagar,Descuento=Descuento WHERE N_Pedido = NPedido;
     COMMIT;
 END;
-set SQL_SAFE_UPDATES = 0;
 
 DROP PROCEDURE IF EXISTS sp_DeleteHistorial;
 DELIMITER $$
@@ -2240,7 +2228,6 @@ sp:BEGIN
 END;
 set SQL_SAFE_UPDATES = 0;
 
-
 DROP PROCEDURE IF EXISTS sp_SelectHistorialId;
 DELIMITER $$
 CREATE PROCEDURE sp_SelectHistorialId
@@ -2260,33 +2247,43 @@ sp:BEGIN
     END IF;
  	START TRANSACTION;
 		SELECT H.N_Pedido,H.Cliente,H.FechaEmision,H.DirecEnvio,H.SubTotal,H.Total,H.TotalPagar
-        FROM HISTORIALCOMPRA H
+		FROM HISTORIALCOMPRA H 
         where H.N_Pedido = NPedido;
     COMMIT; 
 END;
-call sp_SelectHistorialId(1)
 
-
-DROP VIEW IF EXISTS v_sSelectHistorial;
-CREATE VIEW v_sSelectHistorial
-AS
-		SELECT H.N_Pedido,H.Cliente,H.FechaEmision,H.DirecEnvio,H.SubTotal,H.Total,H.TotalPagar
-        FROM HISTORIALCOMPRA H LIMIT 30
-SELECT * FROM v_sSelectHistorial
-#######################################
-SELECT * FROM DESCUENTO
-SELECT * FROM CARACTERISTICAS
-
+DROP PROCEDURE IF EXISTS v_sSelectHistorial;
+DELIMITER $$
+CREATE PROCEDURE v_sSelectHistorial
+()
+sp:BEGIN
+    DECLARE a INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		rollback;
+		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECCIONAR' as message;
+	END;
+ 	START TRANSACTION;
+        SET a = (select count(*) from historialcompra); 
+        IF (a>0)
+        THEN
+			SELECT H.N_Pedido,H.Cliente,H.FechaEmision,H.DirecEnvio,H.SubTotal,H.Total,H.TotalPagar
+			FROM HISTORIALCOMPRA H ;
+		ELSEIF(a=0)THEN 
+			SELECT 'No contiene compras' as message;
+        END IF;
+    COMMIT; 
+END;
+##################################################DESCUENTO############################################################
 DROP PROCEDURE IF EXISTS sp_InsertDescuento
 DELIMITER $$
 CREATE PROCEDURE sp_InsertDescuento
 (
 IN idProduct smallint,
-IN dscto1 float,
-IN dscto2 float,
-IN dscto3 float,
-IN dscto4 float
-
+IN dscto1 smallint,
+IN dscto2 smallint,
+IN dscto3 smallint,
+IN dscto4 smallint
 )
 sp:BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -2328,10 +2325,7 @@ sp:BEGIN
 		INSERT INTO descuento(id_Product,dscto1,dscto2,dscto3,dscto4)VALUES(idProduct,dscto1,dscto2,dscto3,dscto4);
     COMMIT; 
 END;
-CALL sp_InsertDescuento(3,30,30,30,30)
-select * from descuento
-CALL sp_InsertHistorialCompra(1,'Torres Miguel','2022-06-04','DirecEnvio',10000,2,11800,10)
-select * from historialcompra
+
 DROP PROCEDURE IF EXISTS sp_UpdateDescuento;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdateDescuento
@@ -2377,10 +2371,7 @@ sp:BEGIN
 		UPDATE descuento SET dscto1=dscto1 ,dscto2=dscto2 ,dscto3=dscto3,dscto4=dscto4  WHERE id_Product = idProduct ;
     COMMIT;
 END;
-call sp_UpdateDescuento(3,50,40,50,60)
-select * from descuento
 
-https://definicion.de/descuento/
 DROP PROCEDURE IF EXISTS sp_DeleteDescuento;
 DELIMITER $$
 CREATE PROCEDURE sp_DeleteDescuento
@@ -2400,7 +2391,7 @@ sp:BEGIN
     END IF;
     IF (not exists(SELECT id_Product FROM DESCUENTO WHERE id_Product =  idProduct))
     THEN
-		SELECT 'No existente IdProducto delc Descuento.' as message;
+		SELECT 'No existente IdProducto del Descuento.' as message;
         LEAVE sp;
 	END IF;
  	START TRANSACTION;
@@ -2408,9 +2399,6 @@ sp:BEGIN
     COMMIT; 
 END;
 set SQL_SAFE_UPDATES = 0;
-SELECT * FROM DESCUENTO
-CALL sp_DeleteDescuento(3)
-SELECT * FROM CARACTERISTICAS
 
 DROP PROCEDURE IF EXISTS sp_SelectDescuentoId;
 DELIMITER $$
@@ -2438,26 +2426,14 @@ sp:BEGIN
         where D.id_Product = idProduct;
     COMMIT; 
 END;
-call sp_SelectHistorialId(1)
-CALL sp_SelectDescuentoId(1)
-SELECT * FROM PRODUCTOS
-SELECT * FROM DESCUENTO
-SELECT * FROM SUBCATEGORIAS
-SELECT * FROM CATEGORIA
 
 DROP VIEW IF EXISTS v_sSelectDescuento;
 CREATE VIEW v_sSelectDescuento
 AS
 		SELECT P.id_Product,P.Nombre_Product,P.Marca_Product,S.Nom_SubCategory,CA.Nom_Category,D.dscto1,D.dscto2,D.dscto3,D.dscto4
-        FROM DESCUENTO D JOIN 
-        PRODUCTOS P ON(P.id_Product =D.id_Product) JOIN SUBCATEGORIAS S
-        ON(S.id_SubCategory = P.id_SubCategory) JOIN CATEGORIA CA
-        ON(CA.id_Categoria = S.id_Category)LIMIT 30
-SELECT * FROM v_sSelectDescuento
-
-#CARACTERISTICAS
-select * from caracteristicas
-
+        FROM DESCUENTO D JOIN PRODUCTOS P ON(P.id_Product =D.id_Product) JOIN SUBCATEGORIAS S
+        ON(S.id_SubCategory = P.id_SubCategory) JOIN CATEGORIA CA ON(CA.id_Categoria = S.id_Category)LIMIT 30
+#####################################################CARACTERISTICAS############################################################################
 DROP PROCEDURE IF EXISTS sp_InsertCaracteristicas
 DELIMITER $$
 CREATE PROCEDURE sp_InsertCaracteristicas
@@ -2490,12 +2466,7 @@ sp:BEGIN
 		INSERT INTO caracteristicas(id_Product,Caracteristicas_product)VALUES(idProduct,Caracteristicas);
     COMMIT; 
 END;
-CALL sp_InsertCaracteristicas(3,'Windows 11 with 6-core AMD Ryzen 5 5500U ProcessorFast charge laptop computer for school or home')
-select * from caracteristicas
-CALL sp_InsertDescuento(3,30,30,30,30)
-select * from descuento
-CALL sp_InsertHistorialCompra(1,'Torres Miguel','2022-06-04','DirecEnvio',10000,2,11800,10)
-select * from historialcompra
+
 DROP PROCEDURE IF EXISTS sp_UpdateCaracteristicas;
 DELIMITER $$
 CREATE PROCEDURE sp_UpdateCaracteristicas
@@ -2523,10 +2494,7 @@ sp:BEGIN
 		UPDATE caracteristicas SET Caracteristicas_product=Caracteristicas  WHERE id_Product = idProduct ;
     COMMIT;
 END;
-call sp_UpdateCaracteristicas(1,'DSDSDS')
-select * from descuento
 
-https://definicion.de/descuento/
 DROP PROCEDURE IF EXISTS sp_DeleteCaracteristicas;
 DELIMITER $$
 CREATE PROCEDURE sp_DeleteCaracteristicas
@@ -2554,11 +2522,6 @@ sp:BEGIN
     COMMIT; 
 END;
 set SQL_SAFE_UPDATES = 0;
-select * from caracteristicas
-CALL sp_DeleteCaracteristicas(3)
-SELECT * FROM DESCUENTO
-CALL sp_DeleteDescuento(3)
-SELECT * FROM CARACTERISTICAS
 
 DROP PROCEDURE IF EXISTS sp_SelectCaracteristicasId;
 DELIMITER $$
@@ -2578,7 +2541,7 @@ sp:BEGIN
         LEAVE sp;
     END IF;
  	START TRANSACTION;
-		SELECT P.id_Product,P.Nombre_Product,P.Marca_Product,S.Nom_SubCategory,CA.Nom_Category,C.Caracteristicas_product
+		SELECT P.id_Product,C.Caracteristicas_product
         FROM CARACTERISTICAS C JOIN 
         PRODUCTOS P ON(P.id_Product =C.id_Product) JOIN SUBCATEGORIAS S
         ON(S.id_SubCategory = P.id_SubCategory) JOIN CATEGORIA CA
@@ -2586,99 +2549,14 @@ sp:BEGIN
         where C.id_Product = idProduct;
     COMMIT; 
 END;
-set SQL_SAFE_UPDATES = 0;
-CALL sp_SelectCaracteristicasId(1)
-call sp_SelectHistorialId(1)
-CALL sp_SelectDescuentoId(1)
-SELECT * FROM PRODUCTOS
-SELECT * FROM DESCUENTO
-SELECT * FROM SUBCATEGORIAS
-SELECT * FROM CATEGORIA
 
 DROP VIEW IF EXISTS v_sSelectCaracteristicas;
 CREATE VIEW v_sSelectCaracteristicas
 AS
-		SELECT P.id_Product,P.Nombre_Product,P.Marca_Product,S.Nom_SubCategory,CA.Nom_Category,C.Caracteristicas_product
-        FROM CARACTERISTICAS C JOIN 
-        PRODUCTOS P ON(P.id_Product =C.id_Product) JOIN SUBCATEGORIAS S
-        ON(S.id_SubCategory = P.id_SubCategory) JOIN CATEGORIA CA
-        ON(CA.id_Categoria = S.id_Category)LIMIT 30
-SELECT * FROM v_sSelectCaracteristicas
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-CALL sp_InsertCategoria('television')
-CALL sp_InsertSubCategoria(1,'Electromestico')
-CALL sp_InsertProductos('Licuadora','Bord',1,'una de las Mejores de la Industria',5000,100,'licuadora.png',1)
-CALL sp_InsertPais('Perú')
-CALL sp_InsertCiudad(1,'Lima') /// cliente 2
-CALL sp_InsertCliente('Oscar Juan','Torres Mallqui',30,'torres123@hotmail.com',984564216,'imagen.png')
-CALL sp_InsertDireccion(1,'Carabayllo 123',1)
-CALL sp_InsertRoll ('Usuario')
-CALL sp_InsertUser(1,1,'miguel123','123456Mx',1)
-CALL sp_InsertMedioPago(1,"Tarjeta")
-CALL sp_InsertPedido(1,1,'2021-06-04','Emp_Envio',10000,'Diret_Envio',2,11800,1)
-CALL sp_InsertCarritoCompra(1,1,1,1800,0,11800)
-CALL sp_InsertHistorialCompra(1,'Torres Miguel','2022-06-04','DirecEnvio',10000,2,11800)
-
-drop procedure if exists sp_CantidadDeRegistros;
-create procedure sp_CantidadDeRegistros()
-
-	SELECT COUNT(PRO.id_Product) CANTIDAD_PRODUCTOS,COUNT(SUB.id_SubCategory) CANTIDAD_SUBCATEGORY
-    FROM productos AS PRO JOIN SUBCATEGORIAS SUB
-    ON(PRO.id_SubCategory = SUB.id_SubCategory);
-	SELECT COUNT(*) CANTIDAD_CATEGORIAS FROM categoria ;
-
-SELECT * FROM PRODUCTOS
-SELECT * FROM SUBCATEGORIAS
-call sp_CantidadDeRegistros;
-
-
-DROP PROCEDURE IF EXISTS sp_CantidadDeRegistros;
-DELIMITER $$
-CREATE PROCEDURE sp_CantidadDeRegistros()
-sp:BEGIN
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION
-	BEGIN
-		rollback;
-		SELECT 'A OCURRIDO UN ERROR AL TRATAR DE SELECCIONAR CANTIDAD PRODUCTOS' as message;
-	END;
- 	START TRANSACTION;
-		SELECT COUNT(*) CANTIDAD_PRODUCTOS, FROM productos;
-    COMMIT; 
-END;
-
-call sp_CantidadDeRegistros();
-
-
-
-CALL sp_InsertProductos('mochila','Adidas',2,'Buena Marca',250,100,'1imagen.png','2imagen.png','3imagen.png',1)
-
-
-#https://www.linio.com.pe/c/portatiles/laptops?price=1000-37539
-
-#https://www.coolbox.pe/radiosfsfssfsfsddffsfsfsfdsf?_q=radiosfsfssfsfsddffsfsfsfdsf&map=ft
-
-
-
-
+		SELECT P.id_Product,C.Caracteristicas_product
+        FROM CARACTERISTICAS C JOIN  PRODUCTOS P ON(P.id_Product =C.id_Product) JOIN SUBCATEGORIAS S
+        ON(S.id_SubCategory = P.id_SubCategory) JOIN CATEGORIA CA ON(CA.id_Categoria = S.id_Category)LIMIT 30
+####################################################################################################################
 CALL sp_InsertCategoria('Computación')
 CALL sp_InsertCategoria('ElectroHogar')
 CALL sp_InsertCategoria('Moda Mujer')
@@ -2688,10 +2566,9 @@ CALL sp_InsertSubCategoria(1,'Laptops')
 CALL sp_InsertSubCategoria(4,'Poleras')
 CALL sp_InsertProductos('Laptop Huawei MateBook D15 15.6 FHD IPS i5-10210U 512GB SSD 8GB RAM Windows Home + Antivirus','Huawei',2,'Antivirus Norton de Regalo - se enviará un correo electrónico con el código para activar la licencia de 60 días totalmente gratis. Condiciones: la activación debe ser durante los 7 primeros días de la recepción del correo, caso contrario se inactivará y se considerará en desuso.',2399.00,100,'UND','SOL','imagen1.png','imagen2.png','imagen3.png','imagen4.png','imagen5.png',1,1)
 CALL sp_InsertProductos('HP 15.6" FHD, Ryzen 5-5500U, 8GB RAM, 256GB SSD, SPRUCE BLUE, Windows 11','HP',2,'Windows 11 with 6-core AMD Ryzen 5 5500U ProcessorFast charge laptop computer for school or home',1899.00,100,'UND','SOL','imagen1.png','imagen2.png','imagen3.png','imagen4.png','imagen5.png',1,1)
-CALL sp_InsertProductos('Cortavientos impermeable Hombre - Ciclismo - Ropa Deportiva - Alpha Fit','Alpha Fit ',3,'Tejido impermeable: Te mantendrá seco bajo la lluvia.Forro interno de malla: Te mantendrá abrigado durante el frío.Ideal para entrenarEl modelo mide 1.72m, pesa 74kg y usa talla M',98.10,100,'UND','SOL','imagen1.png','imagen2.png','imagen3.png','imagen4.png','imagen5.png',1,2)
+CALL sp_InsertProductos('Cortavientos impermeable Hombre - Ciclismo - Ropa Deportiva - Alpha Fit','Alpha Fit ',3,'Tejido impermeable: Te mantendrá seco bajo la lluvia.Forro interno de malla: Te mantendrá abrigado durante el frío.Ideal para entrenarEl modelo mide 1.72m, pesa 74kg y usa talla M',98.10,100,'UND','SOL','imagen1.png','imagen2.png','imagen3.png','imagen4.png','imagen5.png',1,1)
 CALL sp_InsertPais('Perú')
 CALL sp_InsertPais('Argentina')
-CALL sp_InsertPais('Bolivia')
 CALL sp_InsertCiudad(1,'Arequipa')
 CALL sp_InsertCiudad(1,'Trujillo')
 CALL sp_InsertCiudad(2,'Rosario')
@@ -2699,22 +2576,26 @@ CALL sp_InsertCliente('Maria Juana','Oscar Jara',30,'Jara1233@gmail.com',9564123
 CALL sp_InsertCliente('Marco Jerson','Quispe Mamani',40,'123Quispe@gmail.com',964578941,'imagen.png')
 CALL sp_InsertDireccion(1,'Calle Palmeras 123',2)
 CALL sp_InsertDireccion(2,'Calle Pinos 45',3)
-CALL sp_InsertRoll('Admin','ADM')
+CALL sp_InsertRoll('Administrador','ADM')
 CALL sp_InsertRoll('Usuario','USU')
 CALL sp_InsertUser(1,1,'Mallqui123','jjpld6pl9yiy',1)
 CALL sp_InsertUser(2,2,'Quispe123','jlosertiser123',1)
 CALL sp_InsertMedioPago(1,'Visa','1234-4564-7894-4561','456','2027-01-31')
+SELECT * FROM PEDIDO
 CALL sp_InsertPedido(1,1,'2022-01-31','EmpresaOlx',2399,1.199,'Calle Palmeras 123',1,1.200,1)
 CALL sp_InsertCarritoCompra(1,1,1)
-select * from descuento
 INSERT INTO DESCUENTO(id_Product,dscto1,dscto2,dscto3,dscto4)VALUES(1,50,10,15,20)
 INSERT INTO DESCUENTO(id_Product,dscto1,dscto2,dscto3,dscto4)VALUES(2,80,30,10,30)
 INSERT INTO DESCUENTO(id_Product,dscto1,dscto2,dscto3,dscto4)VALUES(3,60,20,40,30)
-
-
+CALL sp_InsertCaracteristicas(1,'Windows 11 with 6-core AMD Ryzen 5 5500U ProcessorFast charge laptop computer for school or home')
+CALL sp_InsertCaracteristicas(2,'Windows 11 with 6-core AMD Ryzen 5 5500U ProcessorFast charge laptop computer for school or home')
+CALL sp_InsertCaracteristicas(3,'Windows 11 with 6-core AMD Ryzen 5 5500U ProcessorFast charge laptop computer for school or home')
+CALL sp_InsertHistorialCompra(1,'Torres Miguel','2022-06-04','DirecEnvio',10000,1,1000,10)
+#################################################################################################################################
 CALL sp_SelectProdXSubCategory('Laptops')
 CALL sp_SelectProdXSubCategoryXPrecio('Laptops',1899)
-call sp_SelectConsultaProd('Huawei')
+cALL sp_SelectConsultaProd('Huawei')
 CALL sp_SelectCiudadesXPais('Perú')
-
+#https://www.linio.com.pe/c/portatiles/laptops?price=1000-37539
+#https://www.coolbox.pe/radiosfsfssfsfsddffsfsfsfdsf?_q=radiosfsfssfsfsddffsfsfsfdsf&map=ft
 

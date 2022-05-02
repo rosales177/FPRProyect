@@ -1,14 +1,14 @@
-<?php namespace App\Controllers\Users;
+<?php namespace App\Controllers\Payment;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 USE App\Controllers\BaseController;
 use \Exception;
 
-class UserController extends BaseController {
-    public function getUser($request,$response,$args){
+class PaymentController extends BaseController {
+    public function getPayment($request,$response,$args){
         try{
             $conn = $this->container->get('db');
-            $stm = $conn->prepare("SELECT * FROM v_sSelectuser");
+            $stm = $conn->prepare("SELECT * FROM v_sSelectMedioPago");
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);
@@ -18,22 +18,22 @@ class UserController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function addUser($request,$response,$args){
+    public function addPayment($request,$response,$args){
         try{
             $body = json_decode($request->getBody(), true);
             $id_Cliente =intval($body['id_Cliente']);
-            $id_Roll = intval($body['id_Roll']);
-            $_Username = $body['_Username'];
-            $_Password = $body['_Password'];
-            $_Status = intval($body['_Status']);
+            $MedioPago = $body['MedioPago'];
+            $NumeroTarjeta = $body['NumeroTarjeta'];
+            $CVV = $body['CVV'];
+            $FechaVencimiento = $body['FechaVencimiento'];
             $conn = $this->container->get('db');
-            $sql = "CALL sp_InsertUser(:idCliente,:idRoll,:Username,:Password,:Status)";
+            $sql = "CALL sp_InsertMedioPago(:idCliente,:MedioPago,:NumeroTarjeta,:CVV,:FechaVencimiento)";
             $stm = $conn->prepare($sql);
             $stm->bindParam(':idCliente',$id_Cliente);
-            $stm->bindParam(':idRoll',$id_Roll);
-            $stm->bindParam(':Username',$_Username);
-            $stm->bindParam(':Password',$_Password);
-            $stm->bindParam(':Status',$_Status);
+            $stm->bindParam(':MedioPago',$MedioPago);
+            $stm->bindParam(':NumeroTarjeta',$NumeroTarjeta);
+            $stm->bindParam(':CVV',$CVV);
+            $stm->bindParam(':FechaVencimiento',$FechaVencimiento);
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);
@@ -43,16 +43,20 @@ class UserController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function modifyUser($request,$response,$args){
+    public function modifyPayment($request,$response,$args){
         try{
             $params =intval($args['id']);
             $body = json_decode($request->getBody(), true);
-            $_Password = $body['_Password'];
+            $NumeroTarjeta = $body['NumeroTarjeta'];
+            $CVV = $body['CVV'];
+            $FechaVencimiento = $body['FechaVencimiento'];
             $conn = $this->container->get('db');
-            $sql = "CALL sp_UpdateUser(:idCliente,:Password)";
+            $sql = "CALL sp_UpdateMedioPago(:idMedioPago,:NumeroTarjeta,:CVV,:FechaVencimiento)";
             $stm = $conn->prepare($sql);
-            $stm->bindParam(':idCliente',$params);
-            $stm->bindParam(':Password',$_Password);
+            $stm->bindParam(':idMedioPago',$params);
+            $stm->bindParam(':NumeroTarjeta',$NumeroTarjeta);
+            $stm->bindParam(':CVV',$CVV);
+            $stm->bindParam(':FechaVencimiento',$FechaVencimiento);
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);
@@ -62,13 +66,13 @@ class UserController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function deleteUser($request,$response,$args){
+    public function deletePayment($request,$response,$args){
         try{
             $params =intval($args['id']);
             $conn = $this->container->get('db');
-            $sql = "CALL sp_DeleteUser(:idCliente)";
+            $sql = "CALL sp_DeleteMedioPago(:idMedioPago)";
             $stm = $conn->prepare($sql);
-            $stm->bindParam(':idCliente',$params);
+            $stm->bindParam(':idMedioPago',$params);
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);
@@ -77,11 +81,11 @@ class UserController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function getUserById($request,$response,$args){
+    public function getPaymentById($request,$response,$args){
         try{
             $params = array($args['id']);
             $conn = $this->container->get('db');
-            $sql = "CALL sp_SelectUserId(?)";
+            $sql = "CALL sp_SelectMedioPagoId(?)";
             $stm = $conn->prepare($sql);
             $stm->execute($params);
             $result = $stm->fetchAll();
@@ -91,10 +95,10 @@ class UserController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function getCountUser($request,$response,$args){
+    public function getCountPayment($request,$response,$args){
         try{
             $conn = $this->container->get('db');
-            $stm = $conn->prepare( "SELECT * FROM v_sCantidadUser");
+            $stm = $conn->prepare( "SELECT * FROM v_sCantidadPayment");
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);

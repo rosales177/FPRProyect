@@ -1,14 +1,13 @@
-<?php namespace App\Controllers\Users;
+<?php namespace App\Controllers\Features;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 USE App\Controllers\BaseController;
 use \Exception;
-
-class UserController extends BaseController {
-    public function getUser($request,$response,$args){
+class FeaturesController extends BaseController {
+    public function getFeatures($request,$response,$args){
         try{
             $conn = $this->container->get('db');
-            $stm = $conn->prepare("SELECT * FROM v_sSelectuser");
+            $stm = $conn->prepare("SELECT * FROM v_sSelectCaracteristicas");
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);
@@ -18,22 +17,16 @@ class UserController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function addUser($request,$response,$args){
+    public function addFeatures($request,$response,$args){
         try{
             $body = json_decode($request->getBody(), true);
-            $id_Cliente =intval($body['id_Cliente']);
-            $id_Roll = intval($body['id_Roll']);
-            $_Username = $body['_Username'];
-            $_Password = $body['_Password'];
-            $_Status = intval($body['_Status']);
+            $id_Product = intval($body['id_Product']);
+            $Caracteristicas_product = $body['Caracteristicas_product'];
             $conn = $this->container->get('db');
-            $sql = "CALL sp_InsertUser(:idCliente,:idRoll,:Username,:Password,:Status)";
+            $sql = "CALL sp_InsertCaracteristicas(:idProduct,:Caracteristicas)";
             $stm = $conn->prepare($sql);
-            $stm->bindParam(':idCliente',$id_Cliente);
-            $stm->bindParam(':idRoll',$id_Roll);
-            $stm->bindParam(':Username',$_Username);
-            $stm->bindParam(':Password',$_Password);
-            $stm->bindParam(':Status',$_Status);
+            $stm->bindParam(':idProduct',$id_Product);
+            $stm->bindParam(':Caracteristicas',$Caracteristicas_product);
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);
@@ -43,16 +36,16 @@ class UserController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function modifyUser($request,$response,$args){
+    public function modifyFeatures($request,$response,$args){
         try{
             $params =intval($args['id']);
             $body = json_decode($request->getBody(), true);
-            $_Password = $body['_Password'];
+            $Caracteristicas_product = $body['Caracteristicas_product'];
             $conn = $this->container->get('db');
-            $sql = "CALL sp_UpdateUser(:idCliente,:Password)";
+            $sql = "CALL sp_UpdateCaracteristicas(:idProduct,:Caracteristicas)";
             $stm = $conn->prepare($sql);
-            $stm->bindParam(':idCliente',$params);
-            $stm->bindParam(':Password',$_Password);
+            $stm->bindParam(':idProduct',$params);
+            $stm->bindParam(':Caracteristicas',$Caracteristicas_product);    
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);
@@ -62,13 +55,13 @@ class UserController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function deleteUser($request,$response,$args){
+    public function deleteFeatures($request,$response,$args){
         try{
             $params =intval($args['id']);
             $conn = $this->container->get('db');
-            $sql = "CALL sp_DeleteUser(:idCliente)";
+            $sql = "CALL sp_DeleteCaracteristicas(:idProduct)";
             $stm = $conn->prepare($sql);
-            $stm->bindParam(':idCliente',$params);
+            $stm->bindParam(':idProduct',$params);
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);
@@ -77,11 +70,11 @@ class UserController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function getUserById($request,$response,$args){
+    public function getFeaturesById($request,$response,$args){
         try{
             $params = array($args['id']);
             $conn = $this->container->get('db');
-            $sql = "CALL sp_SelectUserId(?)";
+            $sql = "CALL sp_SelectCaracteristicasId(?)";
             $stm = $conn->prepare($sql);
             $stm->execute($params);
             $result = $stm->fetchAll();
@@ -91,19 +84,6 @@ class UserController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function getCountUser($request,$response,$args){
-        try{
-            $conn = $this->container->get('db');
-            $stm = $conn->prepare( "SELECT * FROM v_sCantidadUser");
-            $stm->execute();
-            $result = $stm->fetchAll();
-            return $this->jsonResponse($response,'success',$result,200);
-        }catch(Exception $e){
-            $result = array($e->getMessage());
-            return $this->jsonResponse($response,'error',$result,400);
-        }
-    }
-
     
 
 }
