@@ -3,10 +3,6 @@ use Slim\Routing\RouteCollectorProxy;
 
 return function ($app) {
 
-    /*
-    $app->group('/api/linea', function(RouteCollectorProxy $group) use ($app): void {
-        $group->get('/all','App\Controllers\Line\LineController:getAllLine');
-    });*/
     $app->group('/api/category', function(RouteCollectorProxy $group) use ($app): void {
         $group->get('/all','App\Controllers\Category\CategoryController:getAllCategory');
         $group->get('/id/{id}','App\Controllers\Category\CategoryController:getCategoryById');
@@ -26,7 +22,6 @@ return function ($app) {
         $group->get('/filter/{category}','App\Controllers\SubCategory\SubCategoryController:getSubCategoryXCategory');
     });
 
-    #ultimo producto
     $app->group('/api/product', function(RouteCollectorProxy $group) use ($app): void{
         $group->get('/all','App\Controllers\Product\ProductController:getProduct');
         $group->get('/count','App\Controllers\Product\ProductController:getCountProduct');
@@ -146,8 +141,10 @@ return function ($app) {
         $group->get('/id/{id}','App\Controllers\Features\FeaturesController:getFeaturesById');
         
     });
-
-    
+    /*
+    $app->group('/api/linea', function(RouteCollectorProxy $group) use ($app): void {
+        $group->get('/all','App\Controllers\Line\LineController:getAllLine');
+    });*/
     return $app;
 }
 
