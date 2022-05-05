@@ -1,13 +1,13 @@
-<?php namespace App\Controllers\Address;
+<?php namespace App\Controllers\Brands;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 USE App\Controllers\BaseController;
 use \Exception;
-class AddressController extends BaseController {
-    public function getAddress($request,$response,$args){
+class BrandsController extends BaseController {
+    public function getBrands($request,$response,$args){
         try{
             $conn = $this->container->get('db');
-            $stm = $conn->prepare("SELECT * FROM v_sSelectDireccion");
+            $stm = $conn->prepare("SELECT * FROM v_sSelectMarca");
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);
@@ -17,18 +17,14 @@ class AddressController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function addAddress($request,$response,$args){
+    public function addBrands($request,$response,$args){
         try{
             $body = json_decode($request->getBody(), true);
-            $id_Cliente =intval($body['id_Cliente']);
-            $Direccion = $body['Direccion'];
-            $id_Ciudad = intval($body['id_Ciudad']);
+            $Nom_Marca =$body['Nom_Marca'];
             $conn = $this->container->get('db');
-            $sql = "CALL sp_InsertDireccion(:idCliente,:Direccion,:idCiudad)";
+            $sql = "CALL sp_InsertMarca(:NombreMarca)";
             $stm = $conn->prepare($sql);
-            $stm->bindParam(':idCliente',$id_Cliente);
-            $stm->bindParam(':Direccion',$Direccion);
-            $stm->bindParam(':idCiudad',$id_Ciudad);
+            $stm->bindParam(':NombreMarca',$Nom_Marca);
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);
@@ -38,18 +34,16 @@ class AddressController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function modifyAddress($request,$response,$args){
+    public function modifyBrands($request,$response,$args){
         try{
             $params =intval($args['id']);
             $body = json_decode($request->getBody(), true);
-            $Direccion = $body['Direccion'];
-            $id_Ciudad = intval($body['id_Ciudad']);
+            $Nom_Marca =$body['Nom_Marca'];
             $conn = $this->container->get('db');
-            $sql = "CALL sp_UpdateDireccion(:idDireccion,:Direccion,:idCiudad)";
+            $sql = "CALL sp_UpdateMarca(:idMarca,:NombreMarca)";
             $stm = $conn->prepare($sql);
-            $stm->bindParam(':idDireccion',$params);
-            $stm->bindParam(':Direccion',$Direccion);
-            $stm->bindParam(':idCiudad',$id_Ciudad);
+            $stm->bindParam(':idMarca',$params);
+            $stm->bindParam(':NombreMarca',$Nom_Marca);
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);
@@ -59,13 +53,13 @@ class AddressController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function deleteAddress($request,$response,$args){
+    public function deleteBrands($request,$response,$args){
         try{
             $params =intval($args['id']);
             $conn = $this->container->get('db');
-            $sql = "CALL sp_DeleteDireccion(:idDireccion)";
+            $sql = "CALL sp_DeleteMarca(:idMarca)";
             $stm = $conn->prepare($sql);
-            $stm->bindParam(':idDireccion',$params);
+            $stm->bindParam(':idMarca',$params);
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);
@@ -74,11 +68,11 @@ class AddressController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function getAddressById($request,$response,$args){
+    public function getBrandsById($request,$response,$args){
         try{
             $params = array($args['id']);
             $conn = $this->container->get('db');
-            $sql = "CALL sp_SelectDireccionId(?)";
+            $sql = "CALL sp_SelectMarcaId(?)";
             $stm = $conn->prepare($sql);
             $stm->execute($params);
             $result = $stm->fetchAll();
@@ -88,10 +82,10 @@ class AddressController extends BaseController {
             return $this->jsonResponse($response,'error',$result,400);
         }
     }
-    public function getCountAddress($request,$response,$args){
+    public function getCountBrands($request,$response,$args){
         try{
             $conn = $this->container->get('db');
-            $stm = $conn->prepare( "SELECT * FROM v_sCantidadDireccion");
+            $stm = $conn->prepare( "SELECT * FROM v_sCantidadMarca");
             $stm->execute();
             $result = $stm->fetchAll();
             return $this->jsonResponse($response,'success',$result,200);

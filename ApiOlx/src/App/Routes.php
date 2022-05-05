@@ -141,6 +141,16 @@ return function ($app) {
         $group->get('/id/{id}','App\Controllers\Features\FeaturesController:getFeaturesById');
         
     });
+
+    $app->group('/api/brands', function(RouteCollectorProxy $group) use ($app): void{
+        $group->get('/all','App\Controllers\Brands\BrandsController:getBrands');
+        $group->post('/add','App\Controllers\Brands\BrandsController:addBrands');
+        $group->put('/modify/{id}','App\Controllers\Brands\BrandsController:modifyBrands');
+        $group->delete('/delete/{id}','App\Controllers\Brands\BrandsController:deleteBrands');
+        $group->get('/id/{id}','App\Controllers\Brands\BrandsController:getBrandsById');
+        $group->get('/count','App\Controllers\Brands\BrandsController:getCountBrands');
+        
+    });
     /*
     $app->group('/api/linea', function(RouteCollectorProxy $group) use ($app): void {
         $group->get('/all','App\Controllers\Line\LineController:getAllLine');

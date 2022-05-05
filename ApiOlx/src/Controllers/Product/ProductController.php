@@ -87,7 +87,7 @@ class ProductController extends BaseController {
         try{
             $body = json_decode($request->getBody(), true);
             $Nombre_Product = $body['Nombre_Product'];
-            $Marca_Product = $body['Marca_Product'];
+            $id_Marca = intval($body['id_Marca']);
             $id_SubCategory =intval($body['id_SubCategory']);
             $Descript_Product = $body['Descript_Product'];
             $Precio = floatval($body['Precio']);
@@ -102,10 +102,10 @@ class ProductController extends BaseController {
             $NDescuento = intval($body['NDescuento']);
             $_Status = intval($body['_Status']);
             $conn = $this->container->get('db');
-            $sql = "CALL sp_InsertProductos(:Nombre,:Marca,:idSubCategory,:Description,:Precio,:Stock,:Unidad,:Moneda,:Img1,:Img2,:Img3,:Img4,:Img5,:Descuento,:Status)";
+            $sql = "CALL sp_InsertProductos(:Nombre,:idMarca,:idSubCategory,:Description,:Precio,:Stock,:Unidad,:Moneda,:Img1,:Img2,:Img3,:Img4,:Img5,:Descuento,:Status)";
             $stm = $conn->prepare($sql);
             $stm->bindParam(':Nombre',$Nombre_Product);
-            $stm->bindParam(':Marca',$Marca_Product);
+            $stm->bindParam(':idMarca',$id_Marca);
             $stm->bindParam(':idSubCategory',$id_SubCategory);
             $stm->bindParam(':Description',$Descript_Product);
             $stm->bindParam(':Precio',$Precio);
@@ -132,7 +132,7 @@ class ProductController extends BaseController {
             $params =intval($args['id']);
             $body = json_decode($request->getBody(), true);
             $Nombre_Product = $body['Nombre_Product'];
-            $Marca_Product = $body['Marca_Product'];
+            $id_Marca = intval($body['id_Marca']);
             $id_SubCategory =intval($body['id_SubCategory']);
             $Descript_Product = $body['Descript_Product'];
             $Precio = floatval($body['Precio']);
@@ -148,11 +148,11 @@ class ProductController extends BaseController {
             $_Status = intval($body['_Status']);
             $_Status = intval($body['_Status']);
             $conn = $this->container->get('db');
-            $sql = "CALL sp_UpdateProducto(:idProduct,:Nombre,:Marca,:idSubCategory,:Description,:Precio,:Stock,:Unidad,:Moneda,:Img1,:Img2,:Img3,:Img4,:Img5,:Descuento,:Status)";
+            $sql = "CALL sp_UpdateProducto(:idProduct,:Nombre,:idMarca,:idSubCategory,:Description,:Precio,:Stock,:Unidad,:Moneda,:Img1,:Img2,:Img3,:Img4,:Img5,:Descuento,:Status)";
             $stm = $conn->prepare($sql);
             $stm->bindParam(':idProduct',$params);
             $stm->bindParam(':Nombre',$Nombre_Product);
-            $stm->bindParam(':Marca',$Marca_Product);
+            $stm->bindParam(':idMarca',$id_Marca);
             $stm->bindParam(':idSubCategory',$id_SubCategory);
             $stm->bindParam(':Description',$Descript_Product);
             $stm->bindParam(':Precio',$Precio);

@@ -80,7 +80,7 @@ class ShoppingCartController extends BaseController {
         try{
             $params = array($args['id']);
             $conn = $this->container->get('db');
-            $sql = "CALL sp_SelectCarritoCompra(?)";
+            $sql = "CALL sp_SelectCarritoCompraId(?)";
             $stm = $conn->prepare($sql);
             $stm->execute($params);
             $result = $stm->fetchAll();
